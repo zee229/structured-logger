@@ -5,8 +5,21 @@ import json
 import logging
 import os
 from dataclasses import dataclass, field
-from typing import Optional, Dict, Any, List, Callable
+from typing import Optional, Dict, Any, List, Callable, Union
 from uuid import UUID
+
+# Import advanced features
+try:
+    from .advanced import (
+        LogSchema, SamplingConfig, MetricsConfig, RotationConfig,
+        LogValidator, RateLimiter, LogMetrics, CorrelationIDManager,
+        AsyncLogHandler, StructuredRotatingFileHandler,
+        StructuredTimedRotatingFileHandler, AdvancedStructuredFormatter,
+        AsyncLogger
+    )
+    ADVANCED_FEATURES_AVAILABLE = True
+except ImportError:
+    ADVANCED_FEATURES_AVAILABLE = False
 
 
 @dataclass
@@ -44,11 +57,26 @@ class LoggerConfig:
     
     # Fields to exclude from extra attributes
     excluded_attrs: List[str] = field(default_factory=lambda: [
-        'name', 'msg', 'args', 'levelname', 'levelno', 'pathname', 'filename', 
-        'module', 'lineno', 'funcName', 'created', 'msecs', 'relativeCreated', 
-        'thread', 'threadName', 'processName', 'process', 'getMessage', 'exc_info', 
+        'name', 'msg', 'args', 'levelname', 'levelno', 'pathname', 'filename',
+        'module', 'lineno', 'funcName', 'created', 'msecs', 'relativeCreated',
+        'thread', 'threadName', 'processName', 'process', 'getMessage', 'exc_info',
         'exc_text', 'stack_info'
     ])
+
+    # Advanced features configuration
+    enable_async: bool = False
+    enable_validation: bool = False
+    enable_sampling: bool = False
+    enable_metrics: bool = False
+    enable_file_rotation: bool = False
+    enable_correlation_ids: bool = False
+
+    # Advanced feature configs
+    log_schema: Optional['LogSchema'] = None
+    sampling_config: Optional['SamplingConfig'] = None
+    metrics_config: Optional['MetricsConfig'] = None
+    rotation_config: Optional['RotationConfig'] = None
+    log_file_path: Optional[str] = None
 
 
 class StructuredLogFormatter(logging.Formatter):
@@ -131,47 +159,55 @@ def get_logger(
     config: Optional[LoggerConfig] = None,
     force_json: bool = False,
     force_dev: bool = False
-) -> logging.Logger:
+) -> Union[logging.Logger, 'AsyncLogger']:
     """
     Get a structured logger instance with flexible configuration.
-    
+
     Args:
         name: Logger name, defaults to calling module name
         config: Logger configuration, uses default if not provided
         force_json: Force JSON formatting regardless of environment
         force_dev: Force development formatting regardless of environment
-        
+
     Returns:
-        Configured logger instance
+        Configured logger instance (AsyncLogger if async is enabled)
     """
     logger_name = name or __name__
     logger = logging.getLogger(logger_name)
-    
+
     # Only configure if not already configured
     if not logger.handlers:
         config = config or LoggerConfig()
-        
+
         # Set log level from environment or config default
         log_level = os.getenv(config.log_level_env_var, config.default_log_level).upper()
         logger.setLevel(getattr(logging, log_level, logging.INFO))
-        
-        # Create console handler
-        handler = logging.StreamHandler()
-        
+
         # Determine formatter based on environment and override flags
         use_json = force_json or (not force_dev and _is_production_environment(config))
-        
+
         if use_json:
             formatter = StructuredLogFormatter(config)
         else:
             formatter = logging.Formatter(config.dev_format)
-        
-        handler.setFormatter(formatter)
+
+        # Setup advanced features if available and enabled
+        if ADVANCED_FEATURES_AVAILABLE:
+            formatter = _setup_advanced_formatter(formatter, config)
+            handler = _setup_advanced_handler(config, formatter)
+        else:
+            handler = logging.StreamHandler()
+            handler.setFormatter(formatter)
+
         logger.addHandler(handler)
-        
+
         # Prevent duplicate logs
         logger.propagate = False
-    
+
+    # Return async logger if enabled
+    if (ADVANCED_FEATURES_AVAILABLE and config and config.enable_async):
+        return AsyncLogger(logger)
+
     return logger
 
 
@@ -215,11 +251,72 @@ def setup_root_logger(
 
 
 # Backward compatibility aliases
-def get_railway_logger(name: Optional[str] = None) -> logging.Logger:
+def get_railway_logger(name: Optional[str] = None) -> Union[logging.Logger, 'AsyncLogger']:
     """Alias for get_logger for Railway compatibility."""
     return get_logger(name)
 
 
-def get_structured_logger(name: Optional[str] = None, **kwargs) -> logging.Logger:
+def get_structured_logger(name: Optional[str] = None, **kwargs) -> Union[logging.Logger, 'AsyncLogger']:
     """Alias for get_logger with explicit naming."""
     return get_logger(name, **kwargs)
+
+
+def _setup_advanced_formatter(base_formatter, config: LoggerConfig):
+    """Setup advanced formatter with validation and metrics."""
+    if not ADVANCED_FEATURES_AVAILABLE:
+        return base_formatter
+
+    validator = None
+    if config.enable_validation and config.log_schema:
+        validator = LogValidator(config.log_schema)
+
+    metrics = None
+    if config.enable_metrics and config.metrics_config:
+        metrics = LogMetrics(config.metrics_config)
+
+    if validator or metrics:
+        return AdvancedStructuredFormatter(base_formatter, validator, metrics)
+
+    return base_formatter
+
+
+def _setup_advanced_handler(config: LoggerConfig, formatter):
+    """Setup advanced handler with async, rotation, and rate limiting."""
+    if not ADVANCED_FEATURES_AVAILABLE:
+        handler = logging.StreamHandler()
+        handler.setFormatter(formatter)
+        return handler
+
+    # Determine base handler type
+    if config.enable_file_rotation and config.log_file_path:
+        if config.rotation_config.rotation_type == "time":
+            base_handler = StructuredTimedRotatingFileHandler(
+                config.log_file_path, config.rotation_config, formatter
+            )
+        else:
+            base_handler = StructuredRotatingFileHandler(
+                config.log_file_path, config.rotation_config, formatter
+            )
+    else:
+        base_handler = logging.StreamHandler()
+        base_handler.setFormatter(formatter)
+
+    # Add rate limiting if enabled
+    if config.enable_sampling and config.sampling_config:
+        rate_limiter = RateLimiter(config.sampling_config)
+        base_handler.addFilter(lambda record: rate_limiter.should_log())
+
+    # Add correlation ID filter if enabled
+    if config.enable_correlation_ids:
+        def add_correlation_id(record):
+            correlation_id = CorrelationIDManager.get_correlation_id()
+            if correlation_id:
+                record.correlation_id = correlation_id
+            return True
+        base_handler.addFilter(add_correlation_id)
+
+    # Wrap with async handler if enabled
+    if config.enable_async:
+        return AsyncLogHandler(base_handler)
+
+    return base_handler
