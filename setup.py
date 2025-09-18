@@ -11,7 +11,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 exec(open("structured_logger/_version.py").read())
 
 setup(
-    name="structured-logger",
+    name="structured-logger-railway",
     version=__version__,
     author="Nikita Yastreb",
     author_email="yastrebnikita723@gmail.com",
