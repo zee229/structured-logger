@@ -286,7 +286,7 @@ logger.info("Deployed to Railway!")
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/structured-logger.git
+git clone https://github.com/zee229/structured-logger.git
 cd structured-logger
 
 # Install development dependencies
