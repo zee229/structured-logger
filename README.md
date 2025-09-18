@@ -1,5 +1,7 @@
 # Structured Logger
 
+[![PyPI version](https://badge.fury.io/py/structured-logger-railway.svg)](https://pypi.org/project/structured-logger-railway/)
+
 A flexible, configurable structured JSON logger for Python applications. Perfect for cloud deployments, containerized applications, and log aggregation systems like ELK, Splunk, or cloud logging services.
 
 ## Features
@@ -15,7 +17,7 @@ A flexible, configurable structured JSON logger for Python applications. Perfect
 ## Installation
 
 ```bash
-pip install structured-logger
+pip install structured-logger-railway
 ```
 
 ## Quick Start
