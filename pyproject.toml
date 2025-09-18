@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "structured-logger"
+version = "1.0.0"
+authors = [
+    {name = "Nikita Yastreb", email = "yastrebnikita723@gmail.com"},
+]
+description = "A flexible structured JSON logger for Python applications"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.7"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: System :: Logging",
+]
+keywords = ["logging", "json", "structured", "railway", "cloud", "docker", "kubernetes"]
+
+[project.urls]
+Homepage = "https://github.com/zee229/structured-logger"
+Documentation = "https://github.com/zee229/structured-logger#readme"
+Repository = "https://github.com/zee229/structured-logger.git"
+"Bug Tracker" = "https://github.com/zee229/structured-logger/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["structured_logger*"]
+
+[tool.setuptools.package-data]
+structured_logger = ["py.typed"]
