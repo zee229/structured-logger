@@ -4,14 +4,18 @@ Advanced features examples for structured-logger.
 Demonstrates async logging, validation, rate limiting, metrics,
 file rotation, and correlation IDs.
 """
+
 import asyncio
 import time
 from pathlib import Path
 
 from structured_logger import get_logger, LoggerConfig
 from structured_logger.advanced import (
-    LogSchema, SamplingConfig, MetricsConfig, RotationConfig,
-    CorrelationIDManager
+    LogSchema,
+    SamplingConfig,
+    MetricsConfig,
+    RotationConfig,
+    CorrelationIDManager,
 )
 
 
@@ -19,10 +23,7 @@ def example_async_logging():
     """Example of async logging for high-performance applications."""
     print("=== Async Logging Example ===")
 
-    config = LoggerConfig(
-        enable_async=True,
-        force_json=True
-    )
+    config = LoggerConfig(enable_async=True, force_json=True)
 
     logger = get_logger(__name__ + ".async", config=config)
 
@@ -47,15 +48,11 @@ def example_log_validation():
         max_message_length=100,
         field_validators={
             "user_id": lambda x: len(x) > 0,
-            "action": lambda x: x in ["login", "logout", "view", "edit"]
-        }
+            "action": lambda x: x in ["login", "logout", "view", "edit"],
+        },
     )
 
-    config = LoggerConfig(
-        enable_validation=True,
-        log_schema=schema,
-        force_json=True
-    )
+    config = LoggerConfig(enable_validation=True, log_schema=schema, force_json=True)
 
     logger = get_logger(__name__ + ".validation", config=config)
 
@@ -79,13 +76,11 @@ def example_rate_limiting():
         sample_rate=0.5,  # Sample 50% of logs
         burst_limit=3,  # Allow 3 logs before sampling
         time_window=10,  # 10 second window
-        max_logs_per_window=5  # Max 5 logs per window
+        max_logs_per_window=5,  # Max 5 logs per window
     )
 
     config = LoggerConfig(
-        enable_sampling=True,
-        sampling_config=sampling_config,
-        force_json=True
+        enable_sampling=True, sampling_config=sampling_config, force_json=True
     )
 
     logger = get_logger(__name__ + ".sampling", config=config)
@@ -107,13 +102,11 @@ def example_metrics_collection():
         track_performance=True,
         track_counts=True,
         track_errors=True,
-        metrics_interval=5  # Report every 5 seconds
+        metrics_interval=5,  # Report every 5 seconds
     )
 
     config = LoggerConfig(
-        enable_metrics=True,
-        metrics_config=metrics_config,
-        force_json=True
+        enable_metrics=True, metrics_config=metrics_config, force_json=True
     )
 
     logger = get_logger(__name__ + ".metrics", config=config)
@@ -137,16 +130,14 @@ def example_file_rotation():
     log_file.parent.mkdir(exist_ok=True)
 
     rotation_config = RotationConfig(
-        max_bytes=1024,  # Small size for demo
-        backup_count=3,
-        rotation_type="size"
+        max_bytes=1024, backup_count=3, rotation_type="size"  # Small size for demo
     )
 
     config = LoggerConfig(
         enable_file_rotation=True,
         log_file_path=str(log_file),
         rotation_config=rotation_config,
-        force_json=True
+        force_json=True,
     )
 
     logger = get_logger(__name__ + ".rotation", config=config)
@@ -161,10 +152,7 @@ def example_correlation_ids():
     """Example of correlation ID usage."""
     print("=== Correlation IDs Example ===")
 
-    config = LoggerConfig(
-        enable_correlation_ids=True,
-        force_json=True
-    )
+    config = LoggerConfig(enable_correlation_ids=True, force_json=True)
 
     logger = get_logger(__name__ + ".correlation", config=config)
 
@@ -177,7 +165,9 @@ def example_correlation_ids():
 
     # Auto-generated correlation ID
     with CorrelationIDManager.correlation_context() as correlation_id:
-        logger.info("Auto-generated correlation", extra={"correlation_id": correlation_id})
+        logger.info(
+            "Auto-generated correlation", extra={"correlation_id": correlation_id}
+        )
 
         print("Correlation IDs example completed")
 
@@ -187,10 +177,7 @@ def example_combined_features():
     print("=== Combined Features Example ===")
 
     # Setup comprehensive configuration
-    schema = LogSchema(
-        required_fields={"request_id"},
-        field_types={"request_id": str}
-    )
+    schema = LogSchema(required_fields={"request_id"}, field_types={"request_id": str})
 
     sampling_config = SamplingConfig(sample_rate=0.8)
     metrics_config = MetricsConfig(enabled=True)
@@ -204,7 +191,7 @@ def example_combined_features():
         log_schema=schema,
         sampling_config=sampling_config,
         metrics_config=metrics_config,
-        force_json=True
+        force_json=True,
     )
 
     logger = get_logger(__name__ + ".combined", config=config)
@@ -217,8 +204,8 @@ def example_combined_features():
                     extra={
                         "request_id": f"req_{i}",
                         "step": i,
-                        "operation": "complex_task"
-                    }
+                        "operation": "complex_task",
+                    },
                 )
                 await asyncio.sleep(0.1)
 

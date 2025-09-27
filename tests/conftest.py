@@ -1,6 +1,7 @@
 """
 Pytest configuration and fixtures for structured-logger tests.
 """
+
 import os
 import pytest
 from pathlib import Path
@@ -12,11 +13,11 @@ def pytest_configure(config):
     # Load test environment variables
     test_env_path = Path(__file__).parent.parent / ".env.test"
     env_path = Path(__file__).parent.parent / ".env"
-    
+
     # Load .env.test first (higher priority)
     if test_env_path.exists():
         load_dotenv(test_env_path, override=True)
-    
+
     # Load .env as fallback
     if env_path.exists():
         load_dotenv(env_path, override=False)
@@ -53,7 +54,7 @@ def real_sentry_available(test_env_vars):
 def logger_test_config(test_env_vars):
     """Provide a standard logger configuration for tests."""
     from structured_logger import LoggerConfig
-    
+
     return LoggerConfig(
         enable_sentry=False,  # Disabled by default for unit tests
         custom_fields=["user_id", "company_id", "request_id"],
@@ -65,7 +66,7 @@ def sentry_test_config(mock_sentry_dsn):
     """Provide a Sentry configuration for tests."""
     import logging
     from structured_logger import SentryConfig
-    
+
     return SentryConfig(
         dsn=mock_sentry_dsn,
         min_level=logging.INFO,

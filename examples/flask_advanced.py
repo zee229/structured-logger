@@ -1,13 +1,16 @@
 """
 Flask integration example with advanced structured logging features.
 """
+
 from flask import Flask, request, g
 import uuid
 import time
 from structured_logger import get_logger, LoggerConfig
 from structured_logger.advanced import (
-    LogSchema, SamplingConfig, MetricsConfig,
-    CorrelationIDManager
+    LogSchema,
+    SamplingConfig,
+    MetricsConfig,
+    CorrelationIDManager,
 )
 
 app = Flask(__name__)
@@ -18,21 +21,18 @@ schema = LogSchema(
     field_types={"request_id": str, "method": str, "path": str},
     field_validators={
         "method": lambda x: x in ["GET", "POST", "PUT", "DELETE", "PATCH"],
-        "path": lambda x: len(x) > 0
-    }
+        "path": lambda x: len(x) > 0,
+    },
 )
 
 sampling_config = SamplingConfig(
     sample_rate=1.0,  # Log all requests in this example
     burst_limit=50,
-    max_logs_per_window=1000
+    max_logs_per_window=1000,
 )
 
 metrics_config = MetricsConfig(
-    enabled=True,
-    track_performance=True,
-    track_counts=True,
-    metrics_interval=30
+    enabled=True, track_performance=True, track_counts=True, metrics_interval=30
 )
 
 config = LoggerConfig(
@@ -43,7 +43,7 @@ config = LoggerConfig(
     log_schema=schema,
     sampling_config=sampling_config,
     metrics_config=metrics_config,
-    force_json=True
+    force_json=True,
 )
 
 logger = get_logger(__name__, config=config)
@@ -65,8 +65,8 @@ def before_request():
             "method": request.method,
             "path": request.path,
             "user_agent": request.headers.get("User-Agent", ""),
-            "remote_addr": request.remote_addr
-        }
+            "remote_addr": request.remote_addr,
+        },
     )
 
 
@@ -83,8 +83,8 @@ def after_request(response):
             "path": request.path,
             "status_code": response.status_code,
             "duration_ms": round(duration * 1000, 2),
-            "response_size": len(response.get_data())
-        }
+            "response_size": len(response.get_data()),
+        },
     )
 
     # Clear correlation ID
@@ -99,13 +99,13 @@ def handle_exception(e):
     logger.error(
         "Unhandled exception",
         extra={
-            "request_id": getattr(g, 'request_id', None),
+            "request_id": getattr(g, "request_id", None),
             "method": request.method,
             "path": request.path,
             "exception_type": type(e).__name__,
-            "exception_message": str(e)
+            "exception_message": str(e),
         },
-        exc_info=True
+        exc_info=True,
     )
     return {"error": "Internal server error"}, 500
 
@@ -122,21 +122,13 @@ def get_user(user_id):
     """User endpoint with validation."""
     logger.info(
         "User data requested",
-        extra={
-            "request_id": g.request_id,
-            "user_id": user_id,
-            "operation": "get_user"
-        }
+        extra={"request_id": g.request_id, "user_id": user_id, "operation": "get_user"},
     )
 
     # Simulate some processing
     time.sleep(0.1)
 
-    return {
-        "user_id": user_id,
-        "name": f"User {user_id}",
-        "request_id": g.request_id
-    }
+    return {"user_id": user_id, "name": f"User {user_id}", "request_id": g.request_id}
 
 
 @app.route("/error")
@@ -152,11 +144,7 @@ def bulk_operation():
     for i in range(20):
         logger.info(
             f"Bulk operation step {i}",
-            extra={
-                "request_id": g.request_id,
-                "step": i,
-                "operation": "bulk_process"
-            }
+            extra={"request_id": g.request_id, "step": i, "operation": "bulk_process"},
         )
 
     return {"message": "Bulk operation completed", "request_id": g.request_id}
