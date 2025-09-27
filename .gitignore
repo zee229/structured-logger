@@ -48,6 +48,12 @@ coverage.xml
 *.cover
 *.py,cover
 .hypothesis/
+
+# Environment files (keep .env.example and .env.test)
+.env
+.env.local
+.env.production
+
 .pytest_cache/
 cover/
 
