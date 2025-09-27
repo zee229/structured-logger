@@ -1,15 +1,19 @@
 """
 Comprehensive test of all advanced features working together.
 """
+
 import asyncio
-import time
 import tempfile
+import time
 from pathlib import Path
 
-from structured_logger import get_logger, LoggerConfig
+from structured_logger import LoggerConfig, get_logger
 from structured_logger.advanced import (
-    LogSchema, SamplingConfig, MetricsConfig, RotationConfig,
-    CorrelationIDManager
+    CorrelationIDManager,
+    LogSchema,
+    MetricsConfig,
+    RotationConfig,
+    SamplingConfig,
 )
 
 
@@ -29,29 +33,18 @@ def test_individual_features():
 
     # Test 2: Validation
     print("  ✓ Testing validation...")
-    schema = LogSchema(
-        required_fields={"test_field"},
-        field_types={"test_field": str}
-    )
-    config = LoggerConfig(
-        enable_validation=True,
-        log_schema=schema,
-        force_json=True
-    )
+    schema = LogSchema(required_fields={"test_field"}, field_types={"test_field": str})
+    config = LoggerConfig(enable_validation=True, log_schema=schema, force_json=True)
     logger = get_logger("test.validation", config=config)
     logger.info("Valid message", extra={"test_field": "valid"})
 
     # Test 3: Rate Limiting
     print("  ✓ Testing rate limiting...")
     sampling_config = SamplingConfig(
-        sample_rate=0.5,
-        burst_limit=2,
-        max_logs_per_window=3
+        sample_rate=0.5, burst_limit=2, max_logs_per_window=3
     )
     config = LoggerConfig(
-        enable_sampling=True,
-        sampling_config=sampling_config,
-        force_json=True
+        enable_sampling=True, sampling_config=sampling_config, force_json=True
     )
     logger = get_logger("test.sampling", config=config)
     for i in range(5):
@@ -61,9 +54,7 @@ def test_individual_features():
     print("  ✓ Testing metrics...")
     metrics_config = MetricsConfig(enabled=True, metrics_interval=1)
     config = LoggerConfig(
-        enable_metrics=True,
-        metrics_config=metrics_config,
-        force_json=True
+        enable_metrics=True, metrics_config=metrics_config, force_json=True
     )
     logger = get_logger("test.metrics", config=config)
     logger.info("Metrics test message")
@@ -77,7 +68,7 @@ def test_individual_features():
             enable_file_rotation=True,
             log_file_path=str(log_file),
             rotation_config=rotation_config,
-            force_json=True
+            force_json=True,
         )
         logger = get_logger("test.rotation", config=config)
         for i in range(10):
@@ -103,20 +94,15 @@ def test_combined_features():
     schema = LogSchema(
         required_fields={"operation"},
         field_types={"operation": str},
-        field_validators={"operation": lambda x: len(x) > 0}
+        field_validators={"operation": lambda x: len(x) > 0},
     )
 
     sampling_config = SamplingConfig(
-        sample_rate=0.8,
-        burst_limit=5,
-        max_logs_per_window=20
+        sample_rate=0.8, burst_limit=5, max_logs_per_window=20
     )
 
     metrics_config = MetricsConfig(
-        enabled=True,
-        track_performance=True,
-        track_counts=True,
-        metrics_interval=2
+        enabled=True, track_performance=True, track_counts=True, metrics_interval=2
     )
 
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -131,15 +117,13 @@ def test_combined_features():
             enable_metrics=True,
             enable_file_rotation=True,
             enable_correlation_ids=True,
-
             # Feature configurations
             log_schema=schema,
             sampling_config=sampling_config,
             metrics_config=metrics_config,
             rotation_config=rotation_config,
             log_file_path=str(log_file),
-
-            force_json=True
+            force_json=True,
         )
 
         logger = get_logger("test.combined", config=config)
@@ -147,7 +131,9 @@ def test_combined_features():
         async def combined_test():
             # Test with correlation context
             with CorrelationIDManager.correlation_context("combined-test-456"):
-                await logger.info("Combined test started", extra={"operation": "test_start"})
+                await logger.info(
+                    "Combined test started", extra={"operation": "test_start"}
+                )
 
                 # Generate multiple logs for sampling and rotation
                 for i in range(15):
@@ -156,17 +142,18 @@ def test_combined_features():
                         extra={
                             "operation": "test_step",
                             "step": i,
-                            "data": f"test_data_{i}" * 10  # Make logs larger
-                        }
+                            "data": f"test_data_{i}" * 10,  # Make logs larger
+                        },
                     )
 
                     if i % 5 == 0:
                         await logger.warning(
-                            f"Checkpoint at step {i}",
-                            extra={"operation": "checkpoint"}
+                            f"Checkpoint at step {i}", extra={"operation": "checkpoint"}
                         )
 
-                await logger.info("Combined test completed", extra={"operation": "test_end"})
+                await logger.info(
+                    "Combined test completed", extra={"operation": "test_end"}
+                )
 
         # Run the combined test
         asyncio.run(combined_test())
@@ -188,13 +175,10 @@ def test_error_handling():
     # Test with invalid schema
     try:
         schema = LogSchema(
-            required_fields={"invalid_field"},
-            field_types={"invalid_field": str}
+            required_fields={"invalid_field"}, field_types={"invalid_field": str}
         )
         config = LoggerConfig(
-            enable_validation=True,
-            log_schema=schema,
-            force_json=True
+            enable_validation=True, log_schema=schema, force_json=True
         )
         logger = get_logger("test.error", config=config)
 
@@ -213,13 +197,11 @@ def test_error_handling():
     try:
         sampling_config = SamplingConfig(
             sample_rate=0.0,  # No sampling
-            burst_limit=0,    # No burst
-            max_logs_per_window=1
+            burst_limit=0,  # No burst
+            max_logs_per_window=1,
         )
         config = LoggerConfig(
-            enable_sampling=True,
-            sampling_config=sampling_config,
-            force_json=True
+            enable_sampling=True, sampling_config=sampling_config, force_json=True
         )
         logger = get_logger("test.edge", config=config)
 
@@ -260,7 +242,7 @@ def test_performance():
         enable_metrics=True,
         log_schema=schema,
         metrics_config=metrics_config,
-        force_json=True
+        force_json=True,
     )
     logger = get_logger("test.perf.advanced", config=config)
 
@@ -271,7 +253,9 @@ def test_performance():
 
     print(f"  ✓ Standard logging: {standard_time:.3f}s")
     print(f"  ✓ Advanced logging: {advanced_time:.3f}s")
-    print(f"  ✓ Overhead: {((advanced_time - standard_time) / standard_time * 100):.1f}%")
+    print(
+        f"  ✓ Overhead: {((advanced_time - standard_time) / standard_time * 100):.1f}%"
+    )
 
     print("Performance tests completed!\n")
 
@@ -294,4 +278,5 @@ if __name__ == "__main__":
         print("=" * 50)
         print(f"❌ TEST FAILED: {e}")
         import traceback
+
         traceback.print_exc()

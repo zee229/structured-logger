@@ -1,36 +1,35 @@
 """
 FastAPI integration example with advanced structured logging features.
 """
+
 import asyncio
 import time
 import uuid
-from fastapi import FastAPI, Request, HTTPException
+
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.base import BaseHTTPMiddleware
 from fastapi.responses import JSONResponse
 
-from structured_logger import get_logger, LoggerConfig
+from structured_logger import LoggerConfig, get_logger
 from structured_logger.advanced import (
-    LogSchema, SamplingConfig, MetricsConfig,
-    CorrelationIDManager
+    CorrelationIDManager,
+    LogSchema,
+    MetricsConfig,
+    SamplingConfig,
 )
 
 # Setup advanced logging configuration
 schema = LogSchema(
     required_fields={"request_id", "method", "path"},
-    field_types={"request_id": str, "method": str, "path": str}
+    field_types={"request_id": str, "method": str, "path": str},
 )
 
 sampling_config = SamplingConfig(
-    sample_rate=1.0,
-    burst_limit=100,
-    max_logs_per_window=2000
+    sample_rate=1.0, burst_limit=100, max_logs_per_window=2000
 )
 
 metrics_config = MetricsConfig(
-    enabled=True,
-    track_performance=True,
-    track_counts=True,
-    metrics_interval=30
+    enabled=True, track_performance=True, track_counts=True, metrics_interval=30
 )
 
 config = LoggerConfig(
@@ -42,7 +41,7 @@ config = LoggerConfig(
     log_schema=schema,
     sampling_config=sampling_config,
     metrics_config=metrics_config,
-    force_json=True
+    force_json=True,
 )
 
 logger = get_logger(__name__, config=config)
@@ -66,8 +65,8 @@ class LoggingMiddleware(BaseHTTPMiddleware):
                 "method": request.method,
                 "path": request.url.path,
                 "query_params": str(request.query_params),
-                "client_ip": request.client.host
-            }
+                "client_ip": request.client.host,
+            },
         )
 
         try:
@@ -81,8 +80,8 @@ class LoggingMiddleware(BaseHTTPMiddleware):
                     "method": request.method,
                     "path": request.url.path,
                     "status_code": response.status_code,
-                    "duration_ms": round(duration * 1000, 2)
-                }
+                    "duration_ms": round(duration * 1000, 2),
+                },
             )
 
             return response
@@ -98,9 +97,9 @@ class LoggingMiddleware(BaseHTTPMiddleware):
                     "path": request.url.path,
                     "duration_ms": round(duration * 1000, 2),
                     "exception_type": type(e).__name__,
-                    "exception_message": str(e)
+                    "exception_message": str(e),
                 },
-                exc_info=True
+                exc_info=True,
             )
 
             raise
@@ -121,13 +120,10 @@ async def http_exception_handler(request: Request, exc: HTTPException):
             "status_code": exc.status_code,
             "detail": exc.detail,
             "path": request.url.path,
-            "method": request.method
-        }
+            "method": request.method,
+        },
     )
-    return JSONResponse(
-        status_code=exc.status_code,
-        content={"detail": exc.detail}
-    )
+    return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
 
 
 @app.get("/")
@@ -141,11 +137,7 @@ async def root():
 async def get_user(user_id: str):
     """Get user endpoint with async logging."""
     await logger.info(
-        "User lookup started",
-        extra={
-            "user_id": user_id,
-            "operation": "get_user"
-        }
+        "User lookup started", extra={"user_id": user_id, "operation": "get_user"}
     )
 
     # Simulate async database lookup
@@ -153,17 +145,13 @@ async def get_user(user_id: str):
 
     await logger.info(
         "User lookup completed",
-        extra={
-            "user_id": user_id,
-            "operation": "get_user",
-            "found": True
-        }
+        extra={"user_id": user_id, "operation": "get_user", "found": True},
     )
 
     return {
         "user_id": user_id,
         "name": f"User {user_id}",
-        "email": f"user{user_id}@example.com"
+        "email": f"user{user_id}@example.com",
     }
 
 
@@ -177,8 +165,8 @@ async def user_action(user_id: str, action: dict):
         extra={
             "user_id": user_id,
             "action_type": action_type,
-            "operation": "user_action"
-        }
+            "operation": "user_action",
+        },
     )
 
     # Validate action
@@ -188,8 +176,8 @@ async def user_action(user_id: str, action: dict):
             extra={
                 "user_id": user_id,
                 "action_type": action_type,
-                "valid_actions": ["login", "logout", "view", "edit"]
-            }
+                "valid_actions": ["login", "logout", "view", "edit"],
+            },
         )
         raise HTTPException(status_code=400, detail="Invalid action type")
 
@@ -202,8 +190,8 @@ async def user_action(user_id: str, action: dict):
             "user_id": user_id,
             "action_type": action_type,
             "operation": "user_action",
-            "success": True
-        }
+            "success": True,
+        },
     )
 
     return {"status": "success", "action": action_type}
@@ -216,11 +204,7 @@ async def bulk_operation(count: int):
         raise HTTPException(status_code=400, detail="Count too large")
 
     await logger.info(
-        "Bulk operation started",
-        extra={
-            "count": count,
-            "operation": "bulk_operation"
-        }
+        "Bulk operation started", extra={"count": count, "operation": "bulk_operation"}
     )
 
     for i in range(count):
@@ -229,18 +213,14 @@ async def bulk_operation(count: int):
             extra={
                 "item_number": i + 1,
                 "total_items": count,
-                "operation": "bulk_operation"
-            }
+                "operation": "bulk_operation",
+            },
         )
         await asyncio.sleep(0.01)  # Small delay
 
     await logger.info(
         "Bulk operation completed",
-        extra={
-            "count": count,
-            "operation": "bulk_operation",
-            "success": True
-        }
+        extra={"count": count, "operation": "bulk_operation", "success": True},
     )
 
     return {"status": "completed", "processed": count}
