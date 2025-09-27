@@ -32,13 +32,13 @@ dependencies = [
     "sentry-sdk>=2.39.0",
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
+    "uv>=0.8.22",
     "pytest>=7.0.0",
-    "black>=22.0.0",
     "flake8>=5.0.0",
-    "coverage>=7.0.0",
-    "pytest-cov>=4.0.0",
+    "black>=22.0.0",
+    "isort>=5.13.2",
     "build>=0.8.0",
     "twine>=4.0.0",
     "python-dotenv>=1.0.0",
@@ -109,3 +109,4 @@ exclude_lines = [
     "class .*\\bProtocol\\):",
     "@(abc\\.)?abstractmethod",
 ]
+
