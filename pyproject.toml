@@ -29,7 +29,7 @@ classifiers = [
 ]
 keywords = ["logging", "json", "structured", "railway", "cloud", "docker", "kubernetes"]
 dependencies = [
-    "sentry-sdk>=2.39.0",
+    "sentry-sdk[fastapi]>=2.39.0",
 ]
 
 [dependency-groups]
@@ -43,9 +43,10 @@ dev = [
     "twine>=4.0.0",
     "python-dotenv>=1.0.0",
     "pytest-env>=1.1.0",
+    "sentry-sdk[fastapi]>=2.39.0",
 ]
 sentry = [
-    "sentry-sdk>=2.39.0",
+    "sentry-sdk[fastapi]>=2.39.0",
 ]
 all = [
     "sentry-sdk>=2.39.0",
