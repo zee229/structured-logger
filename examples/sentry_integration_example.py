@@ -11,12 +11,18 @@ This example shows how to:
 import logging
 import os
 
-from structured_logger import (LoggerConfig, SentryConfig,
-                               add_sentry_breadcrumb,
-                               capture_exception_with_context,
-                               capture_message_with_context, get_logger,
-                               is_sentry_available, is_sentry_initialized,
-                               set_sentry_context, set_sentry_user)
+from structured_logger import (
+    LoggerConfig,
+    SentryConfig,
+    add_sentry_breadcrumb,
+    capture_exception_with_context,
+    capture_message_with_context,
+    get_logger,
+    is_sentry_available,
+    is_sentry_initialized,
+    set_sentry_context,
+    set_sentry_user,
+)
 
 
 def main():

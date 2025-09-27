@@ -24,9 +24,12 @@ def test_imports():
     print("Testing imports...")
 
     try:
-        from structured_logger import (LoggerConfig, get_logger,
-                                       is_sentry_available,
-                                       is_sentry_initialized)
+        from structured_logger import (
+            LoggerConfig,
+            get_logger,
+            is_sentry_available,
+            is_sentry_initialized,
+        )
 
         print("✓ Basic imports successful")
     except ImportError as e:
@@ -34,12 +37,16 @@ def test_imports():
         return False
 
     try:
-        from structured_logger import (SentryConfig, SentryLogHandler,
-                                       add_sentry_breadcrumb,
-                                       capture_exception_with_context,
-                                       capture_message_with_context,
-                                       initialize_sentry, set_sentry_context,
-                                       set_sentry_user)
+        from structured_logger import (
+            SentryConfig,
+            SentryLogHandler,
+            add_sentry_breadcrumb,
+            capture_exception_with_context,
+            capture_message_with_context,
+            initialize_sentry,
+            set_sentry_context,
+            set_sentry_user,
+        )
 
         print("✓ Sentry integration imports successful")
         return True
@@ -160,10 +167,12 @@ def test_manual_sentry_functions():
     print("\nTesting manual Sentry functions...")
 
     try:
-        from structured_logger import (add_sentry_breadcrumb,
-                                       capture_exception_with_context,
-                                       capture_message_with_context,
-                                       set_sentry_user)
+        from structured_logger import (
+            add_sentry_breadcrumb,
+            capture_exception_with_context,
+            capture_message_with_context,
+            set_sentry_user,
+        )
 
         # These should not raise errors even if Sentry is not initialized
         event_id = capture_message_with_context(

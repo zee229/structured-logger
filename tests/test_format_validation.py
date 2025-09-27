@@ -145,8 +145,7 @@ def test_sentry_format():
 
         # Also mock the availability check
         with patch("structured_logger.sentry_integration.SENTRY_AVAILABLE", True):
-            from structured_logger import (LoggerConfig, SentryConfig,
-                                           get_logger)
+            from structured_logger import LoggerConfig, SentryConfig, get_logger
 
             # Configure logger with Sentry
             sentry_config = SentryConfig(

@@ -11,8 +11,12 @@ from fastapi.middleware.base import BaseHTTPMiddleware
 from fastapi.responses import JSONResponse
 
 from structured_logger import LoggerConfig, get_logger
-from structured_logger.advanced import (CorrelationIDManager, LogSchema,
-                                        MetricsConfig, SamplingConfig)
+from structured_logger.advanced import (
+    CorrelationIDManager,
+    LogSchema,
+    MetricsConfig,
+    SamplingConfig,
+)
 
 # Setup advanced logging configuration
 schema = LogSchema(
