@@ -78,7 +78,7 @@ test-demo:
 
 # Code quality targets
 lint:
-	uv run flake8 src/structured_logger tests
+	uv run flake8 src/structured_logger tests --count --select=E9,F63,F7,F82 --show-source --statistics
 
 format:
 	uv run black src/structured_logger tests
