@@ -11,7 +11,7 @@ from pathlib import Path
 from structured_logger import get_logger, LoggerConfig
 from structured_logger.advanced import (
     LogSchema, SamplingConfig, MetricsConfig, RotationConfig,
-    CorrelationIDManager, AsyncLogger
+    CorrelationIDManager
 )
 
 
@@ -33,7 +33,7 @@ def example_async_logging():
 
     # Run async logging
     asyncio.run(async_task())
-    print("Async logging completed\n")
+    print("Async logging completed")
 
 
 def example_log_validation():
@@ -68,7 +68,7 @@ def example_log_validation():
     # Invalid log (bad action) - will be dropped
     logger.info("Bad action", extra={"user_id": "123", "action": "invalid"})
 
-    print("Validation example completed\n")
+    print("Validation example completed")
 
 
 def example_rate_limiting():
@@ -77,8 +77,8 @@ def example_rate_limiting():
 
     sampling_config = SamplingConfig(
         sample_rate=0.5,  # Sample 50% of logs
-        burst_limit=3,    # Allow 3 logs before sampling
-        time_window=10,   # 10 second window
+        burst_limit=3,  # Allow 3 logs before sampling
+        time_window=10,  # 10 second window
         max_logs_per_window=5  # Max 5 logs per window
     )
 
@@ -95,7 +95,7 @@ def example_rate_limiting():
         logger.info(f"Rate limited log {i}", extra={"iteration": i})
         time.sleep(0.1)
 
-    print("Rate limiting example completed\n")
+    print("Rate limiting example completed")
 
 
 def example_metrics_collection():
@@ -126,7 +126,7 @@ def example_metrics_collection():
 
     # Wait a bit for metrics to be collected
     time.sleep(2)
-    print("Metrics collection example completed\n")
+    print("Metrics collection example completed")
 
 
 def example_file_rotation():
@@ -153,8 +153,8 @@ def example_file_rotation():
 
     # Generate enough logs to trigger rotation
     for i in range(20):
-        logger.info(f"File rotation test log {i}", extra={"data": "x" * 50})\n
-    print(f"File rotation example completed. Check {log_file.parent}/\\n")
+        logger.info(f"File rotation test log {i}", extra={"data": "x" * 50})
+    print(f"File rotation example completed. Check {log_file.parent}")
 
 
 def example_correlation_ids():
@@ -170,7 +170,16 @@ def example_correlation_ids():
 
     # Manual correlation ID
     with CorrelationIDManager.correlation_context("manual-123") as correlation_id:
-        logger.info("Request started", extra={"operation": "user_login"})\n        logger.info("Processing step 1")\n        logger.info("Processing step 2")\n        logger.info("Request completed")\n    \n    # Auto-generated correlation ID\n    with CorrelationIDManager.correlation_context() as correlation_id:\n        logger.info("Auto-generated correlation", extra={"correlation_id": correlation_id})\n    \n    print("Correlation IDs example completed\\n")
+        logger.info("Request started", extra={"operation": "user_login"})
+        logger.info("Processing step 1")
+        logger.info("Processing step 2")
+        logger.info("Request completed")
+
+    # Auto-generated correlation ID
+    with CorrelationIDManager.correlation_context() as correlation_id:
+        logger.info("Auto-generated correlation", extra={"correlation_id": correlation_id})
+
+        print("Correlation IDs example completed")
 
 
 def example_combined_features():
@@ -178,7 +187,8 @@ def example_combined_features():
     print("=== Combined Features Example ===")
 
     # Setup comprehensive configuration
-    schema = LogSchema(\n        required_fields={"request_id"},
+    schema = LogSchema(
+        required_fields={"request_id"},
         field_types={"request_id": str}
     )
 
@@ -213,11 +223,11 @@ def example_combined_features():
                 await asyncio.sleep(0.1)
 
     asyncio.run(complex_operation())
-    print("Combined features example completed\\n")
+    print("Combined features example completed")
 
 
 if __name__ == "__main__":
-    print("Structured Logger - Advanced Features Examples\\n")
+    print("Structured Logger - Advanced Features Examples")
 
     # Run all examples
     example_async_logging()
