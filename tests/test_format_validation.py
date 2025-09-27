@@ -11,9 +11,9 @@ This script demonstrates:
 import json
 import logging
 import sys
-from pathlib import Path
 from io import StringIO
-from unittest.mock import patch, MagicMock
+from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 # Add the package to Python path for testing
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
@@ -23,7 +23,7 @@ def test_railway_format():
     """Test the Railway JSON format output."""
     print("=== Testing Railway Format ===")
 
-    from structured_logger import get_logger, LoggerConfig
+    from structured_logger import LoggerConfig, get_logger
 
     # Capture console output
     console_output = StringIO()
@@ -145,7 +145,8 @@ def test_sentry_format():
 
         # Also mock the availability check
         with patch("structured_logger.sentry_integration.SENTRY_AVAILABLE", True):
-            from structured_logger import get_logger, LoggerConfig, SentryConfig
+            from structured_logger import (LoggerConfig, SentryConfig,
+                                           get_logger)
 
             # Configure logger with Sentry
             sentry_config = SentryConfig(
@@ -250,7 +251,7 @@ def test_exception_handling():
     print("Railway Exception Format:")
     console_output = StringIO()
 
-    from structured_logger import get_logger, LoggerConfig
+    from structured_logger import LoggerConfig, get_logger
 
     config = LoggerConfig(enable_sentry=False)
     logger = get_logger("exception_test", config=config, force_json=True)

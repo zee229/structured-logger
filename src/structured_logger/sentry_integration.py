@@ -8,7 +8,7 @@ JSON logging without interfering with the structured log output.
 import logging
 import os
 from dataclasses import dataclass, field
-from typing import Optional, Dict, Any, List
+from typing import Any, Dict, List, Optional
 from uuid import UUID
 
 try:

@@ -5,6 +5,7 @@ with the original Railway logger implementation.
 """
 
 import os
+
 from structured_logger import get_railway_logger, setup_root_logger
 
 

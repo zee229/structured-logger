@@ -3,8 +3,9 @@ Pytest configuration and fixtures for structured-logger tests.
 """
 
 import os
-import pytest
 from pathlib import Path
+
+import pytest
 from dotenv import load_dotenv
 
 
@@ -65,6 +66,7 @@ def logger_test_config(test_env_vars):
 def sentry_test_config(mock_sentry_dsn):
     """Provide a Sentry configuration for tests."""
     import logging
+
     from structured_logger import SentryConfig
 
     return SentryConfig(

@@ -9,14 +9,10 @@ import asyncio
 import time
 from pathlib import Path
 
-from structured_logger import get_logger, LoggerConfig
-from structured_logger.advanced import (
-    LogSchema,
-    SamplingConfig,
-    MetricsConfig,
-    RotationConfig,
-    CorrelationIDManager,
-)
+from structured_logger import LoggerConfig, get_logger
+from structured_logger.advanced import (CorrelationIDManager, LogSchema,
+                                        MetricsConfig, RotationConfig,
+                                        SamplingConfig)
 
 
 def example_async_logging():

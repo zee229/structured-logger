@@ -2,9 +2,11 @@
 Example Flask integration with structured logging.
 """
 
-import uuid
 import time
-from flask import Flask, request, g, jsonify
+import uuid
+
+from flask import Flask, g, jsonify, request
+
 from structured_logger import get_logger, setup_root_logger
 
 # Setup structured logging for the entire app

@@ -5,17 +5,14 @@ FastAPI integration example with advanced structured logging features.
 import asyncio
 import time
 import uuid
-from fastapi import FastAPI, Request, HTTPException
+
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.base import BaseHTTPMiddleware
 from fastapi.responses import JSONResponse
 
-from structured_logger import get_logger, LoggerConfig
-from structured_logger.advanced import (
-    LogSchema,
-    SamplingConfig,
-    MetricsConfig,
-    CorrelationIDManager,
-)
+from structured_logger import LoggerConfig, get_logger
+from structured_logger.advanced import (CorrelationIDManager, LogSchema,
+                                        MetricsConfig, SamplingConfig)
 
 # Setup advanced logging configuration
 schema = LogSchema(

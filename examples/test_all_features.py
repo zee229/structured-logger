@@ -3,18 +3,14 @@ Comprehensive test of all advanced features working together.
 """
 
 import asyncio
-import time
 import tempfile
+import time
 from pathlib import Path
 
-from structured_logger import get_logger, LoggerConfig
-from structured_logger.advanced import (
-    LogSchema,
-    SamplingConfig,
-    MetricsConfig,
-    RotationConfig,
-    CorrelationIDManager,
-)
+from structured_logger import LoggerConfig, get_logger
+from structured_logger.advanced import (CorrelationIDManager, LogSchema,
+                                        MetricsConfig, RotationConfig,
+                                        SamplingConfig)
 
 
 def test_individual_features():

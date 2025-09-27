@@ -8,20 +8,15 @@ This example shows how to:
 4. Set user context and custom tags
 """
 
-import os
 import logging
-from structured_logger import (
-    get_logger,
-    LoggerConfig,
-    SentryConfig,
-    capture_exception_with_context,
-    capture_message_with_context,
-    set_sentry_user,
-    set_sentry_context,
-    add_sentry_breadcrumb,
-    is_sentry_available,
-    is_sentry_initialized,
-)
+import os
+
+from structured_logger import (LoggerConfig, SentryConfig,
+                               add_sentry_breadcrumb,
+                               capture_exception_with_context,
+                               capture_message_with_context, get_logger,
+                               is_sentry_available, is_sentry_initialized,
+                               set_sentry_context, set_sentry_user)
 
 
 def main():

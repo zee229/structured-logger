@@ -4,7 +4,8 @@ Example showing custom configuration options.
 
 from datetime import datetime
 from uuid import UUID, uuid4
-from structured_logger import get_logger, LoggerConfig
+
+from structured_logger import LoggerConfig, get_logger
 
 
 def serialize_datetime(dt):

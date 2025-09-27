@@ -2,16 +2,14 @@
 Flask integration example with advanced structured logging features.
 """
 
-from flask import Flask, request, g
-import uuid
 import time
-from structured_logger import get_logger, LoggerConfig
-from structured_logger.advanced import (
-    LogSchema,
-    SamplingConfig,
-    MetricsConfig,
-    CorrelationIDManager,
-)
+import uuid
+
+from flask import Flask, g, request
+
+from structured_logger import LoggerConfig, get_logger
+from structured_logger.advanced import (CorrelationIDManager, LogSchema,
+                                        MetricsConfig, SamplingConfig)
 
 app = Flask(__name__)
 

@@ -8,8 +8,8 @@ This shows the actual formats that would be sent to each platform.
 import json
 import logging
 import sys
-from pathlib import Path
 from io import StringIO
+from pathlib import Path
 
 # Add the package to Python path for testing
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
@@ -20,7 +20,7 @@ def test_railway_format():
     print("🚂 RAILWAY FORMAT (JSON Logs)")
     print("=" * 50)
 
-    from structured_logger import get_logger, LoggerConfig
+    from structured_logger import LoggerConfig, get_logger
 
     # Capture console output
     console_output = StringIO()

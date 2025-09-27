@@ -8,19 +8,18 @@ file rotation, and correlation ID support.
 import asyncio
 import json
 import logging
-import time
 import threading
+import time
 import uuid
 from collections import defaultdict, deque
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from logging.handlers import RotatingFileHandler, TimedRotatingFileHandler
 from pathlib import Path
-from queue import Queue, Empty
+from queue import Empty, Queue
 from threading import Lock, local
-from typing import Optional, Dict, Any, List, Callable, Union, Set
+from typing import Any, Callable, Dict, List, Optional, Set, Union
 from uuid import UUID
-
 
 # Thread-local storage for correlation IDs
 _correlation_context = local()

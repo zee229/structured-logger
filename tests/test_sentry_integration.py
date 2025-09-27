@@ -11,8 +11,8 @@ It verifies that:
 """
 
 import logging
-import sys
 import os
+import sys
 from pathlib import Path
 
 # Add the package to Python path for testing
@@ -24,12 +24,9 @@ def test_imports():
     print("Testing imports...")
 
     try:
-        from structured_logger import (
-            get_logger,
-            LoggerConfig,
-            is_sentry_available,
-            is_sentry_initialized,
-        )
+        from structured_logger import (LoggerConfig, get_logger,
+                                       is_sentry_available,
+                                       is_sentry_initialized)
 
         print("✓ Basic imports successful")
     except ImportError as e:
@@ -37,16 +34,12 @@ def test_imports():
         return False
 
     try:
-        from structured_logger import (
-            SentryConfig,
-            SentryLogHandler,
-            initialize_sentry,
-            capture_exception_with_context,
-            capture_message_with_context,
-            set_sentry_user,
-            set_sentry_context,
-            add_sentry_breadcrumb,
-        )
+        from structured_logger import (SentryConfig, SentryLogHandler,
+                                       add_sentry_breadcrumb,
+                                       capture_exception_with_context,
+                                       capture_message_with_context,
+                                       initialize_sentry, set_sentry_context,
+                                       set_sentry_user)
 
         print("✓ Sentry integration imports successful")
         return True
@@ -75,7 +68,7 @@ def test_basic_logging_without_sentry():
     """Test basic logging functionality without Sentry enabled."""
     print("\nTesting basic logging without Sentry...")
 
-    from structured_logger import get_logger, LoggerConfig
+    from structured_logger import LoggerConfig, get_logger
 
     # Configure logger without Sentry
     config = LoggerConfig(enable_sentry=False, custom_fields=["user_id", "request_id"])
@@ -97,7 +90,7 @@ def test_sentry_configuration():
     print("\nTesting Sentry configuration...")
 
     try:
-        from structured_logger import SentryConfig, LoggerConfig
+        from structured_logger import LoggerConfig, SentryConfig
 
         # Test SentryConfig creation
         sentry_config = SentryConfig(
@@ -124,7 +117,7 @@ def test_logger_with_sentry_config():
     print("\nTesting logger with Sentry configuration...")
 
     try:
-        from structured_logger import get_logger, LoggerConfig, SentryConfig
+        from structured_logger import LoggerConfig, SentryConfig, get_logger
 
         # Create Sentry config with fake DSN
         sentry_config = SentryConfig(
@@ -167,12 +160,10 @@ def test_manual_sentry_functions():
     print("\nTesting manual Sentry functions...")
 
     try:
-        from structured_logger import (
-            capture_exception_with_context,
-            capture_message_with_context,
-            set_sentry_user,
-            add_sentry_breadcrumb,
-        )
+        from structured_logger import (add_sentry_breadcrumb,
+                                       capture_exception_with_context,
+                                       capture_message_with_context,
+                                       set_sentry_user)
 
         # These should not raise errors even if Sentry is not initialized
         event_id = capture_message_with_context(
@@ -216,7 +207,7 @@ def test_with_real_sentry():
         return True
 
     try:
-        from structured_logger import get_logger, LoggerConfig, SentryConfig
+        from structured_logger import LoggerConfig, SentryConfig, get_logger
 
         # Configure with real Sentry DSN
         sentry_config = SentryConfig(

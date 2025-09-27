@@ -3,8 +3,10 @@ Test environment configuration and .env file loading.
 """
 
 import os
+
 import pytest
-from structured_logger import get_logger, LoggerConfig, SentryConfig
+
+from structured_logger import LoggerConfig, SentryConfig, get_logger
 
 
 class TestEnvironmentConfiguration:
