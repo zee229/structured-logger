@@ -4,6 +4,7 @@ Advanced logging features for structured logger.
 This module provides async logging, validation, rate limiting, metrics,
 file rotation, and correlation ID support.
 """
+
 import asyncio
 import json
 import logging
@@ -28,28 +29,31 @@ _correlation_context = local()
 @dataclass
 class LogSchema:
     """Schema definition for log validation."""
+
     required_fields: Set[str] = field(default_factory=set)
     optional_fields: Set[str] = field(default_factory=set)
     field_types: Dict[str, type] = field(default_factory=dict)
     field_validators: Dict[str, Callable[[Any], bool]] = field(default_factory=dict)
     max_message_length: Optional[int] = None
-    allowed_levels: Set[str] = field(default_factory=lambda: {
-        'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'
-    })
+    allowed_levels: Set[str] = field(
+        default_factory=lambda: {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}
+    )
 
 
 @dataclass
 class SamplingConfig:
     """Configuration for log sampling."""
+
     sample_rate: float = 1.0  # 0.0 to 1.0
-    burst_limit: int = 100    # Allow burst of logs before sampling
-    time_window: int = 60     # Time window in seconds for rate limiting
+    burst_limit: int = 100  # Allow burst of logs before sampling
+    time_window: int = 60  # Time window in seconds for rate limiting
     max_logs_per_window: int = 1000
 
 
 @dataclass
 class MetricsConfig:
     """Configuration for metrics collection."""
+
     enabled: bool = True
     track_performance: bool = True
     track_counts: bool = True
@@ -60,6 +64,7 @@ class MetricsConfig:
 @dataclass
 class RotationConfig:
     """Configuration for file rotation."""
+
     max_bytes: int = 10 * 1024 * 1024  # 10MB
     backup_count: int = 5
     rotation_type: str = "size"  # "size" or "time"
@@ -142,6 +147,7 @@ class RateLimiter:
             if recent_logs < self.config.max_logs_per_window:
                 # Apply sampling
                 import random
+
                 if random.random() <= self.config.sample_rate:
                     self.timestamps.append(now)
                     return True
@@ -181,12 +187,12 @@ class LogMetrics:
         with self.lock:
             if self.config.track_counts:
                 self.counts[record.levelname] += 1
-                self.counts['total'] += 1
+                self.counts["total"] += 1
 
             if self.config.track_performance and processing_time > 0:
                 self.performance[record.levelname].append(processing_time)
 
-            if self.config.track_errors and record.levelname in ['ERROR', 'CRITICAL']:
+            if self.config.track_errors and record.levelname in ["ERROR", "CRITICAL"]:
                 error_key = f"{record.module}:{record.funcName}"
                 self.errors[error_key] += 1
 
@@ -200,29 +206,30 @@ class LogMetrics:
             for level, times in self.performance.items():
                 if times:
                     perf_stats[level] = {
-                        'avg': sum(times) / len(times),
-                        'min': min(times),
-                        'max': max(times),
-                        'count': len(times)
+                        "avg": sum(times) / len(times),
+                        "min": min(times),
+                        "max": max(times),
+                        "count": len(times),
                     }
 
             return {
-                'uptime': uptime,
-                'counts': dict(self.counts),
-                'errors': dict(self.errors),
-                'performance': perf_stats,
-                'timestamp': time.time()
+                "uptime": uptime,
+                "counts": dict(self.counts),
+                "errors": dict(self.errors),
+                "performance": perf_stats,
+                "timestamp": time.time(),
             }
 
     def _start_metrics_thread(self):
         """Start background thread for periodic metrics reporting."""
+
         def report_metrics():
             while True:
                 time.sleep(self.config.metrics_interval)
                 metrics = self.get_metrics()
                 # Log metrics using standard logger to avoid recursion
-                logging.getLogger('structured_logger.metrics').info(
-                    "Logging metrics", extra={'metrics': metrics}
+                logging.getLogger("structured_logger.metrics").info(
+                    "Logging metrics", extra={"metrics": metrics}
                 )
 
         thread = threading.Thread(target=report_metrics, daemon=True)
@@ -245,13 +252,13 @@ class CorrelationIDManager:
     @staticmethod
     def get_correlation_id() -> Optional[str]:
         """Get correlation ID for current thread/context."""
-        return getattr(_correlation_context, 'correlation_id', None)
+        return getattr(_correlation_context, "correlation_id", None)
 
     @staticmethod
     def clear_correlation_id():
         """Clear correlation ID for current thread/context."""
-        if hasattr(_correlation_context, 'correlation_id'):
-            delattr(_correlation_context, 'correlation_id')
+        if hasattr(_correlation_context, "correlation_id"):
+            delattr(_correlation_context, "correlation_id")
 
     @staticmethod
     @contextmanager
@@ -292,6 +299,7 @@ class AsyncLogHandler(logging.Handler):
 
     def _start_worker(self):
         """Start the background worker thread."""
+
         def worker():
             while not self.stop_event.is_set():
                 try:
@@ -324,7 +332,7 @@ class StructuredRotatingFileHandler(RotatingFileHandler):
             filename=filename,
             maxBytes=config.max_bytes,
             backupCount=config.backup_count,
-            encoding=config.encoding
+            encoding=config.encoding,
         )
         if formatter:
             self.setFormatter(formatter)
@@ -339,7 +347,7 @@ class StructuredTimedRotatingFileHandler(TimedRotatingFileHandler):
             when=config.when,
             interval=config.interval,
             backupCount=config.backup_count,
-            encoding=config.encoding
+            encoding=config.encoding,
         )
         if formatter:
             self.setFormatter(formatter)
@@ -348,8 +356,12 @@ class StructuredTimedRotatingFileHandler(TimedRotatingFileHandler):
 class AdvancedStructuredFormatter(logging.Formatter):
     """Enhanced structured formatter with validation and correlation support."""
 
-    def __init__(self, base_formatter, validator: Optional[LogValidator] = None,
-                 metrics: Optional[LogMetrics] = None):
+    def __init__(
+        self,
+        base_formatter,
+        validator: Optional[LogValidator] = None,
+        metrics: Optional[LogMetrics] = None,
+    ):
         super().__init__()
         self.base_formatter = base_formatter
         self.validator = validator
@@ -394,13 +406,7 @@ class AsyncLogger:
             self.loop = asyncio.get_event_loop()
 
         # Run logging in thread pool to avoid blocking
-        await self.loop.run_in_executor(
-            None,
-            self.logger.log,
-            level,
-            message,
-            *args
-        )
+        await self.loop.run_in_executor(None, self.logger.log, level, message, *args)
 
     async def debug(self, message: str, *args, **kwargs):
         """Log debug message asynchronously."""
