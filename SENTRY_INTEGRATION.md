@@ -369,11 +369,16 @@ print(f"Sentry initialized: {is_sentry_initialized()}")
 import sentry_sdk
 
 # Check current Sentry configuration
-client = sentry_sdk.Hub.current.client
-if client:
-    print(f"Sentry DSN: {client.dsn}")
-    print(f"Environment: {client.options.get('environment')}")
-    print(f"Release: {client.options.get('release')}")
+# Note: Hub is deprecated in newer Sentry SDK versions
+try:
+    client = sentry_sdk.Hub.current.client
+    if client:
+        print(f"Sentry DSN: {client.dsn}")
+        print(f"Environment: {client.options.get('environment')}")
+        print(f"Release: {client.options.get('release')}")
+except AttributeError:
+    # For newer Sentry SDK versions
+    print("Use sentry_sdk.get_current_scope() for newer SDK versions")
 ```
 
 ### Common Issues
@@ -411,4 +416,6 @@ if client:
 - `SentryConfig` - Configuration for Sentry integration
 - `SentryLogHandler` - Log handler that sends logs to Sentry
 
-For more examples, see the `examples/sentry_integration_example.py` file.
+For more examples, see the example files in the `examples/` directory:
+- `sentry_integration_example.py` - Basic Sentry integration
+- `fastapi_advanced.py` - FastAPI with Sentry and uvicorn integration

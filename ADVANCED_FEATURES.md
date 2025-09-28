@@ -12,6 +12,7 @@ The advanced features module provides enterprise-grade logging capabilities incl
 - **Metrics Collection** - Built-in performance and usage metrics
 - **File Rotation** - Automatic log file management
 - **Correlation IDs** - Request tracing and correlation
+- **Uvicorn Integration** - Structured logging for FastAPI/uvicorn servers (v1.3.0+)
 
 ## Installation
 
@@ -314,6 +315,7 @@ config = LoggerConfig(
     enable_metrics=True,
     enable_file_rotation=True,
     enable_correlation_ids=True,
+    override_uvicorn_loggers=True,  # v1.3.0+ FastAPI/uvicorn integration
 
     # Feature configurations
     log_schema=my_schema,
@@ -368,7 +370,8 @@ See the `examples/` directory for complete working examples:
 
 - `advanced_features.py` - Demonstrates all features
 - `flask_advanced.py` - Flask integration
-- `fastapi_advanced.py` - FastAPI integration
+- `fastapi_advanced.py` - FastAPI integration with uvicorn logging
+- `uvicorn_integration.py` - Dedicated uvicorn integration example
 
 ## Migration Guide
 
@@ -385,7 +388,7 @@ Existing code continues to work without changes. To enable advanced features:
 
 If you get import errors for advanced features:
 
-1. Ensure you're using version 1.1.0+
+1. Ensure you're using version 1.1.0+ (current version is 1.3.0)
 2. Check that the `advanced.py` module exists
 3. Verify no import conflicts
 

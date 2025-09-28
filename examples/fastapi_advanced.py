@@ -38,6 +38,7 @@ config = LoggerConfig(
     enable_sampling=True,
     enable_metrics=True,
     enable_correlation_ids=True,
+    override_uvicorn_loggers=True,  # Enable structured logging for uvicorn
     log_schema=schema,
     sampling_config=sampling_config,
     metrics_config=metrics_config,
@@ -245,7 +246,10 @@ if __name__ == "__main__":
 
     async def startup():
         await logger.info("FastAPI application starting with advanced logging")
+        await logger.info("Uvicorn loggers are now using structured JSON formatting")
 
     app.add_event_handler("startup", startup)
 
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    # Run with uvicorn - access logs and error logs will now be structured JSON
+    # thanks to override_uvicorn_loggers=True in the config
+    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")

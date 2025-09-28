@@ -5,7 +5,13 @@ A powerful, configurable logging library that outputs structured JSON logs,
 perfect for cloud deployments, containerized applications, and log aggregation systems.
 """
 
-from .logger import LoggerConfig, StructuredLogFormatter, get_logger, setup_root_logger
+from .logger import (
+    LoggerConfig,
+    StructuredLogFormatter,
+    get_logger,
+    setup_root_logger,
+    setup_uvicorn_logging,
+)
 
 # Import advanced features if available
 try:
@@ -48,8 +54,7 @@ try:
 except ImportError:
     SENTRY_INTEGRATION_AVAILABLE = False
 
-__version__ = "1.2.1"
-
+__version__ = "1.3.0"
 __author__ = "Nikita Yastreb"
 __email__ = "yastrebnikita723@gmail.com"
 
@@ -57,6 +62,7 @@ __all__ = [
     "StructuredLogFormatter",
     "get_logger",
     "setup_root_logger",
+    "setup_uvicorn_logging",
     "LoggerConfig",
 ]
 

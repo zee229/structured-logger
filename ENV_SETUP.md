@@ -34,7 +34,7 @@ Your local development environment variables. **This is gitignored** and should 
 ```bash
 SENTRY_DSN=https://your-sentry-dsn@sentry.io/project-id
 SENTRY_ENVIRONMENT=development  # or production, staging, etc.
-SENTRY_RELEASE=1.1.0
+SENTRY_RELEASE=1.3.0
 ```
 
 ### Logging Configuration

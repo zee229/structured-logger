@@ -12,6 +12,7 @@ A flexible, configurable structured JSON logger for Python applications. Perfect
 - 🔧 **Custom field support** for tracing, user context, and more
 - 📦 **Easy integration** with existing Python logging
 - 🎯 **Type-safe** with full type hints
+- 🦄 **Uvicorn integration** - automatically formats uvicorn logs as structured JSON
 - ⚡ **Zero dependencies** - uses only Python standard library
 
 ## Installation
@@ -168,6 +169,8 @@ except Exception:
 | `custom_serializers` | `Dict[type, Callable]` | `{}` | Custom serializers for specific types |
 | `include_extra_attrs` | `bool` | `True` | Whether to include extra attributes |
 | `excluded_attrs` | `List[str]` | Standard logging fields | Fields to exclude from extra attributes |
+| `override_uvicorn_loggers` | `bool` | `False` | Enable structured formatting for uvicorn loggers |
+| `uvicorn_loggers` | `List[str]` | `["uvicorn", "uvicorn.access", "uvicorn.error", "uvicorn.asgi"]` | List of uvicorn loggers to override |
 
 ### Environment Variables
 
@@ -209,16 +212,26 @@ def after_request(response):
     return response
 ```
 
-### FastAPI
+### FastAPI with Uvicorn Integration
 
 ```python
 from fastapi import FastAPI, Request
-from structured_logger import get_logger
+from structured_logger import get_logger, LoggerConfig, setup_uvicorn_logging
 import uuid
 import time
 
+# Option 1: Simple uvicorn setup (recommended)
+setup_uvicorn_logging(force_json=True)
+
+# Option 2: Full configuration with uvicorn override
+config = LoggerConfig(
+    override_uvicorn_loggers=True,  # Enable structured uvicorn logs
+    custom_fields=["request_id", "user_id"],
+    include_extra_attrs=True,
+)
+
 app = FastAPI()
-logger = get_logger(__name__)
+logger = get_logger(__name__, config=config)
 
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
@@ -240,6 +253,11 @@ async def log_requests(request: Request, call_next):
     )
     
     return response
+
+if __name__ == "__main__":
+    import uvicorn
+    # Uvicorn access logs and error logs will now be structured JSON!
+    uvicorn.run(app, host="0.0.0.0", port=8000)
 ```
 
 ### Django
@@ -309,7 +327,64 @@ python examples/custom_config.py
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
+## Uvicorn Integration
+
+New in v1.3.0! Automatically format uvicorn logs as structured JSON for better log parsing and analysis.
+
+### Quick Setup
+
+```python
+from structured_logger import setup_uvicorn_logging
+
+# This will override all uvicorn loggers with structured formatting
+setup_uvicorn_logging(force_json=True)
+```
+
+### Configuration Options
+
+```python
+from structured_logger import LoggerConfig, get_logger
+
+config = LoggerConfig(
+    override_uvicorn_loggers=True,  # Enable uvicorn override
+    uvicorn_loggers=[               # Customize which loggers to override
+        "uvicorn",
+        "uvicorn.access", 
+        "uvicorn.error",
+        "uvicorn.asgi"
+    ],
+    custom_fields=["request_id", "user_id"],
+)
+
+logger = get_logger(__name__, config=config)
+```
+
+### What Gets Formatted
+
+With uvicorn integration enabled, these logs are automatically structured:
+
+- **uvicorn**: Main uvicorn logger
+- **uvicorn.access**: HTTP access logs
+- **uvicorn.error**: Error logs
+- **uvicorn.asgi**: ASGI-related logs
+
+**Before (plain text):**
+```
+INFO:     127.0.0.1:52000 - "GET /users/123 HTTP/1.1" 200 OK
+```
+
+**After (structured JSON):**
+```json
+{"time": "2024-01-01T12:00:00", "level": "INFO", "message": "127.0.0.1:52000 - \"GET /users/123 HTTP/1.1\" 200 OK", "module": "uvicorn.access"}
+```
+
 ## Changelog
+
+### 1.3.0
+- ✨ **New**: Uvicorn logger integration for structured FastAPI logs
+- 🔧 Added `setup_uvicorn_logging()` convenience function
+- 📝 Enhanced documentation with uvicorn examples
+- 🧪 Comprehensive test coverage for uvicorn integration
 
 ### 1.0.0
 - Initial release
