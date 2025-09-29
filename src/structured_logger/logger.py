@@ -5,6 +5,7 @@ Structured JSON logger with flexible configuration for Python applications.
 import json
 import logging
 import os
+import sys
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional, Union
 from uuid import UUID
@@ -142,6 +143,43 @@ class LoggerConfig:
         ]
     )
 
+    # Stream configuration
+    # If True, uses stdout for all logs (Railway-compatible, default)
+    # If False, uses stderr for ERROR/CRITICAL logs, stdout for others
+    use_stdout_for_all: bool = True
+
+
+class LevelBasedStreamHandler(logging.StreamHandler):
+    """
+    StreamHandler that routes logs to different streams based on level.
+
+    ERROR and CRITICAL logs go to stderr, all others go to stdout.
+    This follows Unix conventions but may cause issues with platforms
+    like Railway that treat stderr as errors.
+    """
+
+    def __init__(self):
+        """Initialize with stdout as default stream."""
+        super().__init__(sys.stdout)
+
+    def emit(self, record):
+        """Emit a record, routing to stderr for ERROR/CRITICAL levels."""
+        # Save original stream
+        original_stream = self.stream
+
+        try:
+            # Route ERROR and CRITICAL to stderr
+            if record.levelno >= logging.ERROR:
+                self.stream = sys.stderr
+            else:
+                self.stream = sys.stdout
+
+            # Emit the record
+            super().emit(record)
+        finally:
+            # Restore original stream
+            self.stream = original_stream
+
 
 class StructuredLogFormatter(logging.Formatter):
     """Custom formatter that outputs structured JSON logs with flexible configuration."""
@@ -265,7 +303,13 @@ def _override_uvicorn_loggers(
             advanced_formatter = _setup_advanced_formatter(uvicorn_formatter, config)
             handler = _setup_advanced_handler(config, advanced_formatter)
         else:
-            handler = logging.StreamHandler()
+            # Choose handler based on configuration
+            if config.use_stdout_for_all:
+                # Use stdout for all logs (Railway-compatible)
+                handler = logging.StreamHandler(sys.stdout)
+            else:
+                # Use level-based routing (Unix convention)
+                handler = LevelBasedStreamHandler()
             handler.setFormatter(uvicorn_formatter)
 
         uvicorn_logger.addHandler(handler)
@@ -336,7 +380,13 @@ def get_logger(
             formatter = _setup_advanced_formatter(formatter, config)
             handler = _setup_advanced_handler(config, formatter)
         else:
-            handler = logging.StreamHandler()
+            # Choose handler based on configuration
+            if config.use_stdout_for_all:
+                # Use stdout for all logs (Railway-compatible)
+                handler = logging.StreamHandler(sys.stdout)
+            else:
+                # Use level-based routing (Unix convention)
+                handler = LevelBasedStreamHandler()
             handler.setFormatter(formatter)
 
         logger.addHandler(handler)
@@ -397,7 +447,12 @@ def setup_root_logger(
     root_logger.setLevel(getattr(logging, log_level, logging.INFO))
 
     # Create console handler
-    handler = logging.StreamHandler()
+    if config.use_stdout_for_all:
+        # Use stdout for all logs (Railway-compatible)
+        handler = logging.StreamHandler(sys.stdout)
+    else:
+        # Use level-based routing (Unix convention)
+        handler = LevelBasedStreamHandler()
 
     # Determine formatter
     use_json = force_json or (not force_dev and _is_production_environment(config))
@@ -490,7 +545,11 @@ def _setup_advanced_formatter(base_formatter, config: LoggerConfig):
 def _setup_advanced_handler(config: LoggerConfig, formatter):
     """Setup advanced handler with async, rotation, and rate limiting."""
     if not ADVANCED_FEATURES_AVAILABLE:
-        handler = logging.StreamHandler()
+        # Choose handler based on configuration
+        if config.use_stdout_for_all:
+            handler = logging.StreamHandler(sys.stdout)
+        else:
+            handler = LevelBasedStreamHandler()
         handler.setFormatter(formatter)
         return handler
 
@@ -505,7 +564,11 @@ def _setup_advanced_handler(config: LoggerConfig, formatter):
                 config.log_file_path, config.rotation_config, formatter
             )
     else:
-        base_handler = logging.StreamHandler()
+        # Choose handler based on configuration
+        if config.use_stdout_for_all:
+            base_handler = logging.StreamHandler(sys.stdout)
+        else:
+            base_handler = LevelBasedStreamHandler()
         base_handler.setFormatter(formatter)
 
     # Add rate limiting if enabled
