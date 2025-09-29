@@ -200,10 +200,10 @@ class StructuredLogFormatter(logging.Formatter):
                 )
 
         # Handle 'error' field explicitly to prevent conflicts with logging internals
-        if hasattr(record, 'error'):
-            error_value = getattr(record, 'error')
+        if hasattr(record, "error"):
+            error_value = getattr(record, "error")
             if error_value is not None:
-                log_record['error_details'] = self._serialize_value(error_value)
+                log_record["error_details"] = self._serialize_value(error_value)
 
         # Handle any extra attributes
         if self.config.include_extra_attrs:
