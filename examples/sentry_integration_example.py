@@ -61,9 +61,6 @@ def main():
     print(f"Sentry initialized: {is_sentry_initialized()}")
     print()
 
-    # Set user context for Sentry
-    set_sentry_user(user_id="user123", email="user@example.com", username="testuser")
-
     # Set custom context
     set_sentry_context(
         "business",

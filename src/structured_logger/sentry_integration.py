@@ -169,6 +169,12 @@ class SentryLogHandler(logging.Handler):
                     if value is not None:
                         extra_context[field] = self._serialize_value(value)
 
+            # Handle 'error' field explicitly to prevent conflicts with logging internals
+            if hasattr(record, 'error'):
+                error_value = getattr(record, 'error')
+                if error_value is not None:
+                    extra_context['error_details'] = self._serialize_value(error_value)
+
             # Add any extra attributes from the log record
             for key, value in record.__dict__.items():
                 if (
@@ -195,6 +201,7 @@ class SentryLogHandler(logging.Handler):
                         "exc_info",
                         "exc_text",
                         "stack_info",
+                        "error",  # Exclude 'error' to prevent conflicts with logging internals
                     ]
                     and key not in self.config.tag_fields
                     and key not in self.config.extra_fields
