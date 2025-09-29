@@ -54,7 +54,7 @@ try:
 except ImportError:
     SENTRY_INTEGRATION_AVAILABLE = False
 
-__version__ = "1.3.0"
+__version__ = "1.3.1"
 __author__ = "Nikita Yastreb"
 __email__ = "yastrebnikita723@gmail.com"
 

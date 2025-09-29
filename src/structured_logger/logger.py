@@ -108,6 +108,7 @@ class LoggerConfig:
             "exc_info",
             "exc_text",
             "stack_info",
+            "error",  # Exclude 'error' to prevent conflicts with logging internals
         ]
     )
 
@@ -197,6 +198,12 @@ class StructuredLogFormatter(logging.Formatter):
                 log_record[field_name] = self._serialize_value(
                     getattr(record, field_name)
                 )
+
+        # Handle 'error' field explicitly to prevent conflicts with logging internals
+        if hasattr(record, 'error'):
+            error_value = getattr(record, 'error')
+            if error_value is not None:
+                log_record['error_details'] = self._serialize_value(error_value)
 
         # Handle any extra attributes
         if self.config.include_extra_attrs:
