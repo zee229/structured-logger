@@ -13,6 +13,7 @@ A flexible, configurable structured JSON logger for Python applications. Perfect
 - 📦 **Easy integration** with existing Python logging
 - 🎯 **Type-safe** with full type hints
 - 🦄 **Uvicorn integration** - automatically formats uvicorn logs as structured JSON
+- 🦅 **Gunicorn integration** - automatically formats gunicorn logs as structured JSON
 - ⚡ **Zero dependencies** - uses only Python standard library
 
 ## Installation
@@ -171,6 +172,8 @@ except Exception:
 | `excluded_attrs` | `List[str]` | Standard logging fields | Fields to exclude from extra attributes |
 | `override_uvicorn_loggers` | `bool` | `False` | Enable structured formatting for uvicorn loggers |
 | `uvicorn_loggers` | `List[str]` | `["uvicorn", "uvicorn.access", "uvicorn.error", "uvicorn.asgi"]` | List of uvicorn loggers to override |
+| `override_gunicorn_loggers` | `bool` | `False` | Enable structured formatting for gunicorn loggers |
+| `gunicorn_loggers` | `List[str]` | `["gunicorn", "gunicorn.access", "gunicorn.error"]` | List of gunicorn loggers to override |
 
 ### Environment Variables
 
@@ -184,15 +187,25 @@ except Exception:
 
 ## Framework Integration
 
-### Flask
+### Flask with Gunicorn Integration
 
 ```python
 from flask import Flask, request, g
-from structured_logger import get_logger
+from structured_logger import get_logger, setup_gunicorn_logging
 import uuid
 
+# Option 1: Simple gunicorn setup (recommended)
+setup_gunicorn_logging(force_json=True)
+
+# Option 2: Full configuration with gunicorn override
+config = LoggerConfig(
+    override_gunicorn_loggers=True,  # Enable structured gunicorn logs
+    custom_fields=["request_id", "user_id"],
+    include_extra_attrs=True,
+)
+
 app = Flask(__name__)
-logger = get_logger(__name__)
+logger = get_logger(__name__, config=config)
 
 @app.before_request
 def before_request():
@@ -210,6 +223,9 @@ def after_request(response):
         }
     )
     return response
+
+# Run with: gunicorn --workers 4 --bind 0.0.0.0:8000 myapp:app
+# Gunicorn access logs and error logs will now be structured JSON!
 ```
 
 ### FastAPI with Uvicorn Integration

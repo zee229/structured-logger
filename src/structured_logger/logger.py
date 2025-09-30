@@ -143,6 +143,16 @@ class LoggerConfig:
         ]
     )
 
+    # Gunicorn logger override
+    override_gunicorn_loggers: bool = False
+    gunicorn_loggers: List[str] = field(
+        default_factory=lambda: [
+            "gunicorn",
+            "gunicorn.access",
+            "gunicorn.error",
+        ]
+    )
+
     # Stream configuration
     # If True, uses stdout for all logs (Railway-compatible, default)
     # If False, uses stderr for ERROR/CRITICAL logs, stdout for others
@@ -336,6 +346,77 @@ def _override_uvicorn_loggers(
         uvicorn_logger.propagate = False
 
 
+def _override_gunicorn_loggers(
+    config: LoggerConfig,
+    formatter: logging.Formatter,
+    force_json: bool = False,
+    force_dev: bool = False,
+) -> None:
+    """Override gunicorn loggers to use structured formatting."""
+    if not config.override_gunicorn_loggers:
+        return
+
+    # Determine if we should use JSON formatting
+    use_json = force_json or (not force_dev and _is_production_environment(config))
+
+    # Create appropriate formatter for gunicorn loggers
+    if use_json:
+        gunicorn_formatter = StructuredLogFormatter(config)
+    else:
+        gunicorn_formatter = logging.Formatter(config.dev_format)
+
+    # Override each gunicorn logger
+    for logger_name in config.gunicorn_loggers:
+        gunicorn_logger = logging.getLogger(logger_name)
+
+        # Clear existing handlers
+        for handler in gunicorn_logger.handlers[:]:
+            gunicorn_logger.removeHandler(handler)
+
+        # Set log level from environment or config default
+        log_level = os.getenv(
+            config.log_level_env_var, config.default_log_level
+        ).upper()
+        gunicorn_logger.setLevel(getattr(logging, log_level, logging.INFO))
+
+        # Setup advanced features if available and enabled
+        if ADVANCED_FEATURES_AVAILABLE:
+            advanced_formatter = _setup_advanced_formatter(gunicorn_formatter, config)
+            handler = _setup_advanced_handler(config, advanced_formatter)
+        else:
+            # Choose handler based on configuration
+            if config.use_stdout_for_all:
+                # Use stdout for all logs (Railway-compatible)
+                handler = logging.StreamHandler(sys.stdout)
+            else:
+                # Use level-based routing (Unix convention)
+                handler = LevelBasedStreamHandler()
+            handler.setFormatter(gunicorn_formatter)
+
+        gunicorn_logger.addHandler(handler)
+
+        # Add Sentry handler if enabled
+        if SENTRY_INTEGRATION_AVAILABLE and config.enable_sentry:
+            sentry_config = config.sentry_config or SentryConfig()
+            sentry_handler = SentryLogHandler(sentry_config)
+
+            # Add correlation ID filter to Sentry handler if enabled
+            if ADVANCED_FEATURES_AVAILABLE and config.enable_correlation_ids:
+
+                def add_correlation_id(record):
+                    correlation_id = CorrelationIDManager.get_correlation_id()
+                    if correlation_id:
+                        record.correlation_id = correlation_id
+                    return True
+
+                sentry_handler.addFilter(add_correlation_id)
+
+            gunicorn_logger.addHandler(sentry_handler)
+
+        # Prevent duplicate logs from propagating to root logger
+        gunicorn_logger.propagate = False
+
+
 def get_logger(
     name: Optional[str] = None,
     config: Optional[LoggerConfig] = None,
@@ -415,6 +496,9 @@ def get_logger(
         # Override uvicorn loggers if enabled
         _override_uvicorn_loggers(config, formatter, force_json, force_dev)
 
+        # Override gunicorn loggers if enabled
+        _override_gunicorn_loggers(config, formatter, force_json, force_dev)
+
     # Return async logger if enabled
     if ADVANCED_FEATURES_AVAILABLE and config and config.enable_async:
         return AsyncLogger(logger)
@@ -474,6 +558,9 @@ def setup_root_logger(
     # Override uvicorn loggers if enabled
     _override_uvicorn_loggers(config, formatter, force_json, force_dev)
 
+    # Override gunicorn loggers if enabled
+    _override_gunicorn_loggers(config, formatter, force_json, force_dev)
+
 
 # Backward compatibility aliases
 def get_railway_logger(
@@ -521,6 +608,39 @@ def setup_uvicorn_logging(
         formatter = logging.Formatter(config.dev_format)
 
     _override_uvicorn_loggers(config, formatter, force_json, force_dev)
+
+
+def setup_gunicorn_logging(
+    config: Optional[LoggerConfig] = None,
+    force_json: bool = False,
+    force_dev: bool = False,
+) -> None:
+    """
+    Setup gunicorn logging with structured formatting.
+
+    This is a convenience function that specifically configures gunicorn loggers
+    to use structured formatting. It's useful when you want to apply structured
+    logging to gunicorn without affecting other loggers.
+
+    Args:
+        config: Logger configuration, uses default with gunicorn override enabled if not provided
+        force_json: Force JSON formatting regardless of environment
+        force_dev: Force development formatting regardless of environment
+    """
+    if config is None:
+        config = LoggerConfig(override_gunicorn_loggers=True)
+    else:
+        # Ensure gunicorn override is enabled
+        config.override_gunicorn_loggers = True
+
+    # Create a dummy formatter to pass to the override function
+    use_json = force_json or (not force_dev and _is_production_environment(config))
+    if use_json:
+        formatter = StructuredLogFormatter(config)
+    else:
+        formatter = logging.Formatter(config.dev_format)
+
+    _override_gunicorn_loggers(config, formatter, force_json, force_dev)
 
 
 def _setup_advanced_formatter(base_formatter, config: LoggerConfig):
