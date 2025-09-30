@@ -6,6 +6,7 @@ Run with:
 """
 
 from flask import Flask
+
 from structured_logger import setup_gunicorn_logging, get_logger
 
 # Setup Gunicorn logging - call this BEFORE creating your app

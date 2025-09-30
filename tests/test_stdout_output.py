@@ -8,10 +8,7 @@ anything written to stderr as an error.
 import io
 import logging
 import os
-import sys
 from contextlib import redirect_stderr, redirect_stdout
-
-import pytest
 
 from structured_logger import LoggerConfig, get_logger, setup_root_logger
 
