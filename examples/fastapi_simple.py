@@ -6,6 +6,7 @@ All logs (app, uvicorn, libraries) will be formatted as JSON automatically.
 """
 
 from fastapi import FastAPI
+
 from structured_logger import get_logger
 
 # That's it! Everything is automatic now!

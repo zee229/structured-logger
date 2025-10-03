@@ -7,6 +7,7 @@ set override_library_loggers=False.
 """
 
 from fastapi import FastAPI
+
 from structured_logger import LoggerConfig, get_logger, setup_root_logger
 
 # Disable library logger override - only format your app logs
@@ -24,12 +25,13 @@ app = FastAPI()
 @app.get("/")
 async def root():
     logger.info("This will be JSON formatted")
-    
+
     # Library logs will use their default format (not JSON)
     import logging
+
     httpx_logger = logging.getLogger("httpx")
     httpx_logger.info("This will NOT be JSON formatted")
-    
+
     return {"message": "Check logs to see the difference"}
 
 

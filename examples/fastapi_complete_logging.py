@@ -11,6 +11,7 @@ All logger overrides are now enabled by default! Just call get_logger() and ever
 """
 
 from fastapi import FastAPI, Request
+
 from structured_logger import LoggerConfig, get_logger
 
 # All overrides are enabled by default! Just add custom fields if needed.
@@ -69,8 +70,9 @@ async def root():
 @app.get("/test-library-logs")
 async def test_library_logs():
     """Test that library logs are formatted correctly."""
-    import httpx
     import logging
+
+    import httpx
 
     # This will use the structured formatter
     httpx_logger = logging.getLogger("httpx")

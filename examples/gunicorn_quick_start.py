@@ -7,7 +7,7 @@ Run with:
 
 from flask import Flask
 
-from structured_logger import setup_gunicorn_logging, get_logger
+from structured_logger import get_logger, setup_gunicorn_logging
 
 # Setup Gunicorn logging - call this BEFORE creating your app
 setup_gunicorn_logging(force_json=True)

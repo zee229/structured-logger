@@ -241,20 +241,20 @@ class TestLibraryLoggerIntegration:
 
         # Test multiple loggers
         test_loggers = ["httpx", "sqlalchemy", "starlette"]
-        
+
         for logger_name in test_loggers:
             log_capture = StringIO()
             handler = logging.StreamHandler(log_capture)
             handler.setFormatter(StructuredLogFormatter(config))
-            
+
             logger = logging.getLogger(logger_name)
             logger.handlers.clear()
             logger.addHandler(handler)
-            
+
             logger.info(f"Test message from {logger_name}")
-            
+
             log_output = log_capture.getvalue().strip()
-            
+
             # Verify it's valid JSON
             try:
                 log_data = json.loads(log_output)
@@ -290,7 +290,7 @@ class TestLibraryLoggerIntegration:
         # Log with extra fields
         httpx_logger.info(
             "HTTP request",
-            extra={"request_id": "123", "user_id": "456", "method": "GET"}
+            extra={"request_id": "123", "user_id": "456", "method": "GET"},
         )
 
         log_output = log_capture.getvalue().strip()
@@ -309,10 +309,10 @@ class TestLibraryLoggerIntegration:
     def test_library_logger_override_with_log_level(self):
         """Test that library logger override respects log level configuration."""
         import os
-        
+
         # Set LOG_LEVEL environment variable
         os.environ["LOG_LEVEL"] = "WARNING"
-        
+
         try:
             config = LoggerConfig(
                 override_library_loggers=True,
