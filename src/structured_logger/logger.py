@@ -132,8 +132,8 @@ class LoggerConfig:
     enable_sentry: bool = False
     sentry_config: Optional["SentryConfig"] = None
 
-    # Uvicorn logger override
-    override_uvicorn_loggers: bool = False
+    # Uvicorn logger override (enabled by default for convenience)
+    override_uvicorn_loggers: bool = True
     uvicorn_loggers: List[str] = field(
         default_factory=lambda: [
             "uvicorn",
@@ -143,13 +143,32 @@ class LoggerConfig:
         ]
     )
 
-    # Gunicorn logger override
-    override_gunicorn_loggers: bool = False
+    # Gunicorn logger override (enabled by default for convenience)
+    override_gunicorn_loggers: bool = True
     gunicorn_loggers: List[str] = field(
         default_factory=lambda: [
             "gunicorn",
             "gunicorn.access",
             "gunicorn.error",
+        ]
+    )
+
+    # Third-party library logger override (enabled by default for convenience)
+    override_library_loggers: bool = True
+    library_loggers: List[str] = field(
+        default_factory=lambda: [
+            "httpx",
+            "httpcore",
+            "sqlalchemy",
+            "sqlalchemy.engine",
+            "sqlalchemy.pool",
+            "sqlalchemy.orm",
+            "starlette",
+            "fastapi",
+            "asyncio",
+            "aiohttp",
+            "urllib3",
+            "requests",
         ]
     )
 
@@ -417,6 +436,77 @@ def _override_gunicorn_loggers(
         gunicorn_logger.propagate = False
 
 
+def _override_library_loggers(
+    config: LoggerConfig,
+    formatter: logging.Formatter,
+    force_json: bool = False,
+    force_dev: bool = False,
+) -> None:
+    """Override third-party library loggers to use structured formatting."""
+    if not config.override_library_loggers:
+        return
+
+    # Determine if we should use JSON formatting
+    use_json = force_json or (not force_dev and _is_production_environment(config))
+
+    # Create appropriate formatter for library loggers
+    if use_json:
+        library_formatter = StructuredLogFormatter(config)
+    else:
+        library_formatter = logging.Formatter(config.dev_format)
+
+    # Override each library logger
+    for logger_name in config.library_loggers:
+        library_logger = logging.getLogger(logger_name)
+
+        # Clear existing handlers
+        for handler in library_logger.handlers[:]:
+            library_logger.removeHandler(handler)
+
+        # Set log level from environment or config default
+        log_level = os.getenv(
+            config.log_level_env_var, config.default_log_level
+        ).upper()
+        library_logger.setLevel(getattr(logging, log_level, logging.INFO))
+
+        # Setup advanced features if available and enabled
+        if ADVANCED_FEATURES_AVAILABLE:
+            advanced_formatter = _setup_advanced_formatter(library_formatter, config)
+            handler = _setup_advanced_handler(config, advanced_formatter)
+        else:
+            # Choose handler based on configuration
+            if config.use_stdout_for_all:
+                # Use stdout for all logs (Railway-compatible)
+                handler = logging.StreamHandler(sys.stdout)
+            else:
+                # Use level-based routing (Unix convention)
+                handler = LevelBasedStreamHandler()
+            handler.setFormatter(library_formatter)
+
+        library_logger.addHandler(handler)
+
+        # Add Sentry handler if enabled
+        if SENTRY_INTEGRATION_AVAILABLE and config.enable_sentry:
+            sentry_config = config.sentry_config or SentryConfig()
+            sentry_handler = SentryLogHandler(sentry_config)
+
+            # Add correlation ID filter to Sentry handler if enabled
+            if ADVANCED_FEATURES_AVAILABLE and config.enable_correlation_ids:
+
+                def add_correlation_id(record):
+                    correlation_id = CorrelationIDManager.get_correlation_id()
+                    if correlation_id:
+                        record.correlation_id = correlation_id
+                    return True
+
+                sentry_handler.addFilter(add_correlation_id)
+
+            library_logger.addHandler(sentry_handler)
+
+        # Prevent duplicate logs from propagating to root logger
+        library_logger.propagate = False
+
+
 def get_logger(
     name: Optional[str] = None,
     config: Optional[LoggerConfig] = None,
@@ -499,6 +589,9 @@ def get_logger(
         # Override gunicorn loggers if enabled
         _override_gunicorn_loggers(config, formatter, force_json, force_dev)
 
+        # Override library loggers if enabled
+        _override_library_loggers(config, formatter, force_json, force_dev)
+
     # Return async logger if enabled
     if ADVANCED_FEATURES_AVAILABLE and config and config.enable_async:
         return AsyncLogger(logger)
@@ -560,6 +653,9 @@ def setup_root_logger(
 
     # Override gunicorn loggers if enabled
     _override_gunicorn_loggers(config, formatter, force_json, force_dev)
+
+    # Override library loggers if enabled
+    _override_library_loggers(config, formatter, force_json, force_dev)
 
 
 # Backward compatibility aliases
@@ -641,6 +737,39 @@ def setup_gunicorn_logging(
         formatter = logging.Formatter(config.dev_format)
 
     _override_gunicorn_loggers(config, formatter, force_json, force_dev)
+
+
+def setup_library_logging(
+    config: Optional[LoggerConfig] = None,
+    force_json: bool = False,
+    force_dev: bool = False,
+) -> None:
+    """
+    Setup third-party library logging with structured formatting.
+
+    This is a convenience function that specifically configures common third-party
+    library loggers (httpx, sqlalchemy, starlette, etc.) to use structured formatting.
+    It's useful when you want to apply structured logging to all library logs.
+
+    Args:
+        config: Logger configuration, uses default with library override enabled if not provided
+        force_json: Force JSON formatting regardless of environment
+        force_dev: Force development formatting regardless of environment
+    """
+    if config is None:
+        config = LoggerConfig(override_library_loggers=True)
+    else:
+        # Ensure library override is enabled
+        config.override_library_loggers = True
+
+    # Create a dummy formatter to pass to the override function
+    use_json = force_json or (not force_dev and _is_production_environment(config))
+    if use_json:
+        formatter = StructuredLogFormatter(config)
+    else:
+        formatter = logging.Formatter(config.dev_format)
+
+    _override_library_loggers(config, formatter, force_json, force_dev)
 
 
 def _setup_advanced_formatter(base_formatter, config: LoggerConfig):

@@ -29,10 +29,10 @@ class TestUvicornIntegration:
             logger.handlers.clear()
             logger.setLevel(logging.NOTSET)
 
-    def test_uvicorn_logger_override_disabled_by_default(self):
-        """Test that uvicorn logger override is disabled by default."""
+    def test_uvicorn_logger_override_enabled_by_default(self):
+        """Test that uvicorn logger override is enabled by default."""
         config = LoggerConfig()
-        assert config.override_uvicorn_loggers is False
+        assert config.override_uvicorn_loggers is True
 
     def test_uvicorn_logger_override_configuration(self):
         """Test uvicorn logger override configuration."""

@@ -28,10 +28,10 @@ class TestGunicornIntegration:
             logger.handlers.clear()
             logger.setLevel(logging.NOTSET)
 
-    def test_gunicorn_logger_override_disabled_by_default(self):
-        """Test that gunicorn logger override is disabled by default."""
+    def test_gunicorn_logger_override_enabled_by_default(self):
+        """Test that gunicorn logger override is enabled by default."""
         config = LoggerConfig()
-        assert config.override_gunicorn_loggers is False
+        assert config.override_gunicorn_loggers is True
 
     def test_gunicorn_logger_override_configuration(self):
         """Test gunicorn logger override configuration."""

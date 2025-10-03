@@ -12,6 +12,7 @@ from .logger import (
     setup_root_logger,
     setup_uvicorn_logging,
     setup_gunicorn_logging,
+    setup_library_logging,
 )
 
 # Import advanced features if available
@@ -65,6 +66,7 @@ __all__ = [
     "setup_root_logger",
     "setup_uvicorn_logging",
     "setup_gunicorn_logging",
+    "setup_library_logging",
     "LoggerConfig",
 ]
 
