@@ -1,10 +1,13 @@
 # Uvicorn Integration Guide
 
-The structured-logger package now includes built-in support for formatting uvicorn logs as structured JSON. This is particularly useful for FastAPI applications where you want consistent log formatting across both your application logs and the web server logs.
+The structured-logger package now includes built-in support for formatting uvicorn logs as structured JSON. This is
+particularly useful for FastAPI applications where you want consistent log formatting across both your application logs
+and the web server logs.
 
 ## Overview
 
-When you enable uvicorn integration, the following loggers are automatically configured to use structured JSON formatting:
+When you enable uvicorn integration, the following loggers are automatically configured to use structured JSON
+formatting:
 
 - `uvicorn` - Main uvicorn logger
 - `uvicorn.access` - HTTP access logs (requests/responses)
@@ -89,10 +92,10 @@ if __name__ == "__main__":
 
 ### LoggerConfig Parameters
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `override_uvicorn_loggers` | `bool` | `False` | Enable structured formatting for uvicorn loggers |
-| `uvicorn_loggers` | `List[str]` | `["uvicorn", "uvicorn.access", "uvicorn.error", "uvicorn.asgi"]` | List of uvicorn loggers to override |
+| Parameter                  | Type        | Default                                                          | Description                                      |
+|----------------------------|-------------|------------------------------------------------------------------|--------------------------------------------------|
+| `override_uvicorn_loggers` | `bool`      | `False`                                                          | Enable structured formatting for uvicorn loggers |
+| `uvicorn_loggers`          | `List[str]` | `["uvicorn", "uvicorn.access", "uvicorn.error", "uvicorn.asgi"]` | List of uvicorn loggers to override              |
 
 ### Custom Uvicorn Loggers
 
@@ -157,7 +160,8 @@ setup_uvicorn_logging(force_dev=True)
 
 ### Integration with Advanced Features
 
-If you have advanced features enabled (async logging, correlation IDs, etc.), uvicorn loggers will automatically inherit these features:
+If you have advanced features enabled (async logging, correlation IDs, etc.), uvicorn loggers will automatically inherit
+these features:
 
 ```python
 from structured_logger import LoggerConfig, get_logger
@@ -210,7 +214,8 @@ logger = get_logger(__name__, config=config)
 
 ### Duplicate Logs
 
-If you see duplicate logs, it might be because uvicorn loggers are propagating to the root logger. The integration automatically sets `propagate=False` to prevent this.
+If you see duplicate logs, it might be because uvicorn loggers are propagating to the root logger. The integration
+automatically sets `propagate=False` to prevent this.
 
 ### Performance Considerations
 

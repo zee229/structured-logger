@@ -13,7 +13,7 @@ import logging
 import sys
 from io import StringIO
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 # Add the package to Python path for testing
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))

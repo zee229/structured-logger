@@ -210,7 +210,7 @@ async def bulk_operation(count: int):
 
     for i in range(count):
         await logger.info(
-            f"Processing item {i+1}",
+            f"Processing item {i + 1}",
             extra={
                 "item_number": i + 1,
                 "total_items": count,

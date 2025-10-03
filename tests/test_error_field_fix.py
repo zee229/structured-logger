@@ -66,10 +66,10 @@ def test_error_field_handling():
 
     for i, extra_data in enumerate(test_cases):
         try:
-            logger.info(f"Test case {i+1}", extra=extra_data)
-            print(f"✓ Test case {i+1} passed: {extra_data}")
+            logger.info(f"Test case {i + 1}", extra=extra_data)
+            print(f"✓ Test case {i + 1} passed: {extra_data}")
         except Exception as e:
-            print(f"✗ Test case {i+1} failed: {e}")
+            print(f"✗ Test case {i + 1} failed: {e}")
             return False
 
     print("\n✅ All tests passed! The 'error' field fix is working correctly.")

@@ -9,6 +9,8 @@ from .logger import (
     LoggerConfig,
     StructuredLogFormatter,
     get_logger,
+    setup_gunicorn_logging,
+    setup_library_logging,
     setup_root_logger,
     setup_uvicorn_logging,
 )
@@ -54,7 +56,7 @@ try:
 except ImportError:
     SENTRY_INTEGRATION_AVAILABLE = False
 
-__version__ = "1.3.2"
+__version__ = "1.4.0"
 __author__ = "Nikita Yastreb"
 __email__ = "yastrebnikita723@gmail.com"
 
@@ -63,6 +65,8 @@ __all__ = [
     "get_logger",
     "setup_root_logger",
     "setup_uvicorn_logging",
+    "setup_gunicorn_logging",
+    "setup_library_logging",
     "LoggerConfig",
 ]
 

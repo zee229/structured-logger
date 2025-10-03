@@ -21,7 +21,6 @@ from structured_logger import (
     is_sentry_available,
     is_sentry_initialized,
     set_sentry_context,
-    set_sentry_user,
 )
 
 

@@ -11,7 +11,6 @@ import uuid
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.base import BaseHTTPMiddleware
-from fastapi.responses import JSONResponse
 
 from structured_logger import LoggerConfig, get_logger, setup_uvicorn_logging
 

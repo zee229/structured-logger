@@ -13,6 +13,7 @@ A flexible, configurable structured JSON logger for Python applications. Perfect
 - 📦 **Easy integration** with existing Python logging
 - 🎯 **Type-safe** with full type hints
 - 🦄 **Uvicorn integration** - automatically formats uvicorn logs as structured JSON
+- 🦅 **Gunicorn integration** - automatically formats gunicorn logs as structured JSON
 - ⚡ **Zero dependencies** - uses only Python standard library
 
 ## Installation
@@ -169,8 +170,12 @@ except Exception:
 | `custom_serializers` | `Dict[type, Callable]` | `{}` | Custom serializers for specific types |
 | `include_extra_attrs` | `bool` | `True` | Whether to include extra attributes |
 | `excluded_attrs` | `List[str]` | Standard logging fields | Fields to exclude from extra attributes |
-| `override_uvicorn_loggers` | `bool` | `False` | Enable structured formatting for uvicorn loggers |
+| `override_uvicorn_loggers` | `bool` | `True` | Enable structured formatting for uvicorn loggers |
 | `uvicorn_loggers` | `List[str]` | `["uvicorn", "uvicorn.access", "uvicorn.error", "uvicorn.asgi"]` | List of uvicorn loggers to override |
+| `override_gunicorn_loggers` | `bool` | `True` | Enable structured formatting for gunicorn loggers |
+| `gunicorn_loggers` | `List[str]` | `["gunicorn", "gunicorn.access", "gunicorn.error"]` | List of gunicorn loggers to override |
+| `override_library_loggers` | `bool` | `True` | Enable structured formatting for third-party library loggers (httpx, sqlalchemy, etc.) |
+| `library_loggers` | `List[str]` | `["httpx", "httpcore", "sqlalchemy", "starlette", "fastapi", ...]` | List of library loggers to override |
 
 ### Environment Variables
 
@@ -184,15 +189,25 @@ except Exception:
 
 ## Framework Integration
 
-### Flask
+### Flask with Gunicorn Integration
 
 ```python
 from flask import Flask, request, g
-from structured_logger import get_logger
+from structured_logger import get_logger, setup_gunicorn_logging
 import uuid
 
+# Option 1: Simple gunicorn setup (recommended)
+setup_gunicorn_logging(force_json=True)
+
+# Option 2: Full configuration with gunicorn override
+config = LoggerConfig(
+    override_gunicorn_loggers=True,  # Enable structured gunicorn logs
+    custom_fields=["request_id", "user_id"],
+    include_extra_attrs=True,
+)
+
 app = Flask(__name__)
-logger = get_logger(__name__)
+logger = get_logger(__name__, config=config)
 
 @app.before_request
 def before_request():
@@ -210,24 +225,67 @@ def after_request(response):
         }
     )
     return response
+
+# Run with: gunicorn --workers 4 --bind 0.0.0.0:8000 myapp:app
+# Gunicorn access logs and error logs will now be structured JSON!
+```
+
+### Automatic Logger Overrides (Enabled by Default!)
+
+**All server and library logs are automatically formatted as JSON!** This includes:
+- **Uvicorn**: `uvicorn`, `uvicorn.access`, `uvicorn.error`, `uvicorn.asgi`
+- **Gunicorn**: `gunicorn`, `gunicorn.access`, `gunicorn.error`
+- **HTTP Clients**: `httpx`, `httpcore`, `urllib3`, `requests`, `aiohttp`
+- **Database**: `sqlalchemy` (including engine, pool, orm)
+- **Frameworks**: `starlette`, `fastapi`
+- **Async**: `asyncio`
+
+```python
+from structured_logger import get_logger
+
+# That's it! Everything is automatic!
+logger = get_logger(__name__)
+
+# All logs are now JSON formatted:
+# ✓ Your application logs
+# ✓ Uvicorn/Gunicorn logs (automatic!)
+# ✓ Third-party library logs (automatic!)
+```
+
+**To disable specific overrides:**
+
+```python
+from structured_logger import LoggerConfig, get_logger
+
+config = LoggerConfig(
+    override_uvicorn_loggers=False,   # Disable uvicorn override
+    override_gunicorn_loggers=False,  # Disable gunicorn override
+    override_library_loggers=False,   # Disable library override
+)
+logger = get_logger(__name__, config=config)
 ```
 
 ### FastAPI with Uvicorn Integration
 
 ```python
 from fastapi import FastAPI, Request
-from structured_logger import get_logger, LoggerConfig, setup_uvicorn_logging
+from structured_logger import get_logger
 import uuid
 import time
 
-# Option 1: Simple uvicorn setup (recommended)
-setup_uvicorn_logging(force_json=True)
+# Simple setup - everything is automatic!
+logger = get_logger(__name__)
 
-# Option 2: Full configuration with uvicorn override
+# Or with custom fields
+from structured_logger import LoggerConfig
+
 config = LoggerConfig(
-    override_uvicorn_loggers=True,  # Enable structured uvicorn logs
     custom_fields=["request_id", "user_id"],
     include_extra_attrs=True,
+    # All overrides are enabled by default:
+    # override_uvicorn_loggers=True
+    # override_library_loggers=True
+    # override_gunicorn_loggers=True
 )
 
 app = FastAPI()

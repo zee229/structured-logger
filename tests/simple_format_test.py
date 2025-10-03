@@ -6,7 +6,6 @@ This shows the actual formats that would be sent to each platform.
 """
 
 import json
-import logging
 import sys
 from io import StringIO
 from pathlib import Path
