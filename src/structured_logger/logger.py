@@ -48,14 +48,14 @@ class LoggerConfig:
     # Environment detection
     production_env_vars: List[str] = field(
         default_factory=lambda: [
-            "RAILWAY_ENVIRONMENT",
+            "RAILWAY_ENVIRONMENT_NAME",
             "ENV",
             "ENVIRONMENT",
             "NODE_ENV",
         ]
     )
     production_env_values: List[str] = field(
-        default_factory=lambda: ["prod", "production", "staging"]
+        default_factory=lambda: ["prod", "production", "staging", "dev"]
     )
 
     # Log level configuration
