@@ -131,8 +131,7 @@ class TestLangChainLoggerIntegration:
     def test_langchain_custom_log_level(self):
         """Test that LangChain log level can be customized."""
         config = LoggerConfig(
-            enable_langchain_logging=True,
-            langchain_log_level="ERROR"
+            enable_langchain_logging=True, langchain_log_level="ERROR"
         )
         formatter = StructuredLogFormatter(config)
 
@@ -155,7 +154,9 @@ class TestLangChainLoggerIntegration:
         assert langchain_logger.level > logging.CRITICAL
 
         # Clear handlers completely for a clean test
-        for logger_name in ["test_logger_disabled", "test_logger_enabled"] + list(config.langchain_loggers):
+        for logger_name in ["test_logger_disabled", "test_logger_enabled"] + list(
+            config.langchain_loggers
+        ):
             test_logger = logging.getLogger(logger_name)
             test_logger.handlers.clear()
             test_logger.setLevel(logging.NOTSET)
@@ -171,10 +172,7 @@ class TestLangChainLoggerIntegration:
 
     def test_langchain_chains_logger(self):
         """Test that langchain.chains logger works correctly."""
-        config = LoggerConfig(
-            enable_langchain_logging=True,
-            langchain_log_level="INFO"
-        )
+        config = LoggerConfig(enable_langchain_logging=True, langchain_log_level="INFO")
         formatter = StructuredLogFormatter(config)
 
         # Capture log output
@@ -297,7 +295,7 @@ class TestLangChainLoggerIntegration:
                 "request_id": "123",
                 "user_id": "456",
                 "chain_id": "chain789",
-                "error_type": "timeout"
+                "error_type": "timeout",
             },
         )
 
@@ -353,7 +351,7 @@ Max iterations: 10"""
             assert "[chain/start]" in log_data["message"]
             assert "What is the weather?" in log_data["message"]
             # Should be a single JSON object, not multiple lines
-            assert log_output.count('\n') == 0 or log_output.count('{') == 1
+            assert log_output.count("\n") == 0 or log_output.count("{") == 1
         except json.JSONDecodeError:
             pytest.fail(f"Log output is not valid JSON: {log_output}")
 
