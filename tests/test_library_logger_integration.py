@@ -22,10 +22,6 @@ class TestLibraryLoggerIntegration:
         library_loggers = [
             "httpx",
             "httpcore",
-            "sqlalchemy",
-            "sqlalchemy.engine",
-            "sqlalchemy.pool",
-            "sqlalchemy.orm",
             "starlette",
             "fastapi",
             "asyncio",
@@ -48,9 +44,11 @@ class TestLibraryLoggerIntegration:
         config = LoggerConfig(override_library_loggers=True)
         assert config.override_library_loggers is True
         assert "httpx" in config.library_loggers
-        assert "sqlalchemy" in config.library_loggers
         assert "starlette" in config.library_loggers
         assert "fastapi" in config.library_loggers
+        # SQLAlchemy is now in a separate list
+        assert "sqlalchemy" not in config.library_loggers
+        assert "sqlalchemy" in config.sqlalchemy_loggers
 
     def test_library_logger_override_can_be_disabled(self):
         """Test that library logger override can be disabled."""
@@ -69,7 +67,7 @@ class TestLibraryLoggerIntegration:
             _override_library_loggers(config, formatter, force_json=True)
 
         # Check that library loggers have been configured
-        for logger_name in ["httpx", "sqlalchemy", "starlette"]:
+        for logger_name in ["httpx", "starlette"]:
             logger = logging.getLogger(logger_name)
             assert len(logger.handlers) > 0
             assert logger.propagate is False
@@ -112,48 +110,13 @@ class TestLibraryLoggerIntegration:
         except json.JSONDecodeError:
             pytest.fail("Log output is not valid JSON")
 
-    def test_sqlalchemy_logger_structured_formatting(self):
-        """Test that sqlalchemy logger uses structured formatting."""
-        config = LoggerConfig(override_library_loggers=True)
-        formatter = StructuredLogFormatter(config)
-
-        # Capture log output
-        log_capture = StringIO()
-        handler = logging.StreamHandler(log_capture)
-
-        with patch(
-            "structured_logger.logger._is_production_environment", return_value=True
-        ):
-            _override_library_loggers(config, formatter, force_json=True)
-
-        # Get sqlalchemy logger and test it
-        sqlalchemy_logger = logging.getLogger("sqlalchemy")
-        sqlalchemy_logger.handlers.clear()
-        sqlalchemy_logger.addHandler(handler)
-        handler.setFormatter(StructuredLogFormatter(config))
-
-        # Log a message
-        sqlalchemy_logger.warning("Database connection warning")
-
-        # Get the logged output
-        log_output = log_capture.getvalue().strip()
-
-        # Verify it's valid JSON
-        try:
-            log_data = json.loads(log_output)
-            assert log_data["level"] == "WARNING"
-            assert log_data["message"] == "Database connection warning"
-            assert log_data["module"] == "sqlalchemy"
-        except json.JSONDecodeError:
-            pytest.fail("Log output is not valid JSON")
-
     def test_setup_library_logging_convenience_function(self):
         """Test the setup_library_logging convenience function."""
         # Test with default config
         setup_library_logging()
 
         # Check that library loggers have been configured
-        for logger_name in ["httpx", "sqlalchemy", "starlette", "fastapi"]:
+        for logger_name in ["httpx", "starlette", "fastapi"]:
             logger = logging.getLogger(logger_name)
             assert len(logger.handlers) > 0
             assert logger.propagate is False
@@ -198,14 +161,14 @@ class TestLibraryLoggerIntegration:
 
         # Store original handler count
         original_handler_counts = {}
-        for logger_name in ["httpx", "sqlalchemy", "starlette"]:
+        for logger_name in ["httpx", "starlette"]:
             logger = logging.getLogger(logger_name)
             original_handler_counts[logger_name] = len(logger.handlers)
 
         _override_library_loggers(config, formatter)
 
         # Check that handler counts haven't changed
-        for logger_name in ["httpx", "sqlalchemy", "starlette"]:
+        for logger_name in ["httpx", "starlette"]:
             logger = logging.getLogger(logger_name)
             assert len(logger.handlers) == original_handler_counts[logger_name]
 
@@ -240,7 +203,7 @@ class TestLibraryLoggerIntegration:
             _override_library_loggers(config, formatter, force_json=True)
 
         # Test multiple loggers
-        test_loggers = ["httpx", "sqlalchemy", "starlette"]
+        test_loggers = ["httpx", "starlette"]
 
         for logger_name in test_loggers:
             log_capture = StringIO()

@@ -86,12 +86,12 @@ def test_railway_simulation():
     os.environ["RAILWAY_ENVIRONMENT"] = "production"
     os.environ["LOG_LEVEL"] = "INFO"
 
-    # Force JSON formatting (like in Railway)
-    logger = get_logger("railway_test", force_json=True)
-
-    print("\nTesting Railway-like scenario with JSON logging...")
-
     try:
+        # Force JSON formatting (like in Railway)
+        logger = get_logger("railway_test", force_json=True)
+
+        print("\nTesting Railway-like scenario with JSON logging...")
+
         # This is the type of call that was causing the error
         logger.error(
             "Request failed",
@@ -107,6 +107,12 @@ def test_railway_simulation():
     except Exception as e:
         print(f"✗ Railway simulation test failed: {e}")
         return False
+    finally:
+        # Clean up environment variables
+        if "RAILWAY_ENVIRONMENT" in os.environ:
+            del os.environ["RAILWAY_ENVIRONMENT"]
+        if "LOG_LEVEL" in os.environ:
+            del os.environ["LOG_LEVEL"]
 
 
 if __name__ == "__main__":
