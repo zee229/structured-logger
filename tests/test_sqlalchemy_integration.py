@@ -10,7 +10,10 @@ from unittest.mock import patch
 import pytest
 
 from structured_logger import LoggerConfig, get_logger
-from structured_logger.logger import StructuredLogFormatter, _override_sqlalchemy_loggers
+from structured_logger.logger import (
+    StructuredLogFormatter,
+    _override_sqlalchemy_loggers,
+)
 
 
 class TestSQLAlchemyLoggerIntegration:
@@ -126,8 +129,7 @@ class TestSQLAlchemyLoggerIntegration:
     def test_sqlalchemy_custom_log_level(self):
         """Test that SQLAlchemy log level can be customized."""
         config = LoggerConfig(
-            enable_sqlalchemy_logging=True,
-            sqlalchemy_log_level="ERROR"
+            enable_sqlalchemy_logging=True, sqlalchemy_log_level="ERROR"
         )
         formatter = StructuredLogFormatter(config)
 
@@ -150,7 +152,9 @@ class TestSQLAlchemyLoggerIntegration:
         assert sqlalchemy_logger.level > logging.CRITICAL
 
         # Clear handlers completely for a clean test
-        for logger_name in ["test_logger_disabled", "test_logger_enabled"] + list(config.sqlalchemy_loggers):
+        for logger_name in ["test_logger_disabled", "test_logger_enabled"] + list(
+            config.sqlalchemy_loggers
+        ):
             test_logger = logging.getLogger(logger_name)
             test_logger.handlers.clear()
             test_logger.setLevel(logging.NOTSET)
@@ -167,8 +171,7 @@ class TestSQLAlchemyLoggerIntegration:
     def test_sqlalchemy_engine_logger(self):
         """Test that sqlalchemy.engine logger works correctly."""
         config = LoggerConfig(
-            enable_sqlalchemy_logging=True,
-            sqlalchemy_log_level="INFO"
+            enable_sqlalchemy_logging=True, sqlalchemy_log_level="INFO"
         )
         formatter = StructuredLogFormatter(config)
 
