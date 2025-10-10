@@ -150,12 +150,14 @@ class TestLangChainLoggerIntegration:
 
     def test_langchain_logger_with_get_logger(self):
         """Test LangChain logging control via get_logger."""
-        # Test with disabled (default)
+        # Test with disabled (default) - in dev environment, LangChain logs are NOT silenced
         config = LoggerConfig(enable_langchain_logging=False)
         logger = get_logger("test_logger_disabled", config=config)
 
         langchain_logger = logging.getLogger("langchain.chains")
-        assert langchain_logger.level > logging.CRITICAL
+        # In dev (no Railway vars), LangChain logs should NOT be silenced
+        # They should have their default level (WARNING) or not be configured
+        assert langchain_logger.level != logging.CRITICAL + 1
 
         # Clear handlers completely for a clean test
         for logger_name in ["test_logger_disabled", "test_logger_enabled"] + list(
@@ -173,6 +175,37 @@ class TestLangChainLoggerIntegration:
         langchain_logger = logging.getLogger("langchain.chains")
         assert langchain_logger.level == logging.WARNING
         assert len(langchain_logger.handlers) > 0
+
+    def test_langchain_logger_silenced_in_railway(self):
+        """Test that LangChain loggers are silenced in Railway/production when disabled."""
+        # Clear handlers
+        config = LoggerConfig(enable_langchain_logging=False)
+        for logger_name in config.langchain_loggers:
+            test_logger = logging.getLogger(logger_name)
+            test_logger.handlers.clear()
+            test_logger.setLevel(logging.NOTSET)
+            test_logger.propagate = True
+
+        # Simulate Railway environment with RAILWAY_SERVICE_NAME
+        import os
+        original_service = os.environ.get("RAILWAY_SERVICE_NAME")
+        try:
+            os.environ["RAILWAY_SERVICE_NAME"] = "test-service"
+            logger = get_logger("test_logger_railway", config=config)
+
+            # In Railway (with Railway vars), LangChain logs SHOULD be silenced
+            langchain_logger = logging.getLogger("langchain.chains")
+            assert langchain_logger.level > logging.CRITICAL
+            assert langchain_logger.propagate is False
+        finally:
+            # Clean up
+            if original_service is None:
+                os.environ.pop("RAILWAY_SERVICE_NAME", None)
+            else:
+                os.environ["RAILWAY_SERVICE_NAME"] = original_service
+            # Clean up logger
+            test_logger = logging.getLogger("test_logger_railway")
+            test_logger.handlers.clear()
 
     def test_langchain_chains_logger(self):
         """Test that langchain.chains logger works correctly."""

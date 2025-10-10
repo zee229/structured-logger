@@ -45,13 +45,12 @@ except ImportError:
 class LoggerConfig:
     """Configuration class for structured logger."""
 
-    # Environment detection
+    # Environment detection - Only Railway-specific variables to avoid conflicts
     production_env_vars: List[str] = field(
         default_factory=lambda: [
-            "RAILWAY_ENVIRONMENT_NAME",
-            "ENV",
-            "ENVIRONMENT",
-            "NODE_ENV",
+            "RAILWAY_ENVIRONMENT_NAME",  # Railway environment name
+            "RAILWAY_SERVICE_NAME",      # Railway service name (always set)
+            "RAILWAY_PROJECT_ID",        # Railway project ID (always set)
         ]
     )
     production_env_values: List[str] = field(
@@ -313,11 +312,26 @@ class StructuredLogFormatter(logging.Formatter):
 
 
 def _is_production_environment(config: LoggerConfig) -> bool:
-    """Check if we're running in a production environment."""
+    """Check if we're running in a production environment.
+
+    For Railway-specific variables (RAILWAY_SERVICE_NAME, RAILWAY_PROJECT_ID),
+    just checking if they exist is enough. For RAILWAY_ENVIRONMENT_NAME,
+    check if the value matches production_env_values.
+    """
+    # Railway-specific variables that indicate Railway environment just by existing
+    railway_presence_vars = ["RAILWAY_SERVICE_NAME", "RAILWAY_PROJECT_ID"]
+
     for env_var in config.production_env_vars:
-        env_value = os.getenv(env_var, "").lower()
-        if env_value in [v.lower() for v in config.production_env_values]:
+        env_value = os.getenv(env_var, "")
+
+        # For Railway presence vars, just check if they exist (have any value)
+        if env_var in railway_presence_vars and env_value:
             return True
+
+        # For other vars (like RAILWAY_ENVIRONMENT_NAME), check the value
+        if env_value.lower() in [v.lower() for v in config.production_env_values]:
+            return True
+
     return False
 
 
@@ -616,12 +630,17 @@ def _override_langchain_loggers(
     force_dev: bool = False,
 ) -> None:
     """Override LangChain loggers to use structured formatting."""
+    # Determine if we're in a production/Railway environment
+    is_production = force_json or (not force_dev and _is_production_environment(config))
+
     if not config.enable_langchain_logging:
-        # If LangChain logging is disabled, silence the loggers completely
-        for logger_name in config.langchain_loggers:
-            langchain_logger = logging.getLogger(logger_name)
-            langchain_logger.setLevel(logging.CRITICAL + 1)  # Effectively silence
-            langchain_logger.propagate = False
+        # Only silence LangChain loggers in production/Railway
+        # In dev, let them log naturally
+        if is_production:
+            for logger_name in config.langchain_loggers:
+                langchain_logger = logging.getLogger(logger_name)
+                langchain_logger.setLevel(logging.CRITICAL + 1)  # Effectively silence
+                langchain_logger.propagate = False
         return
 
     # Determine if we should use JSON formatting
