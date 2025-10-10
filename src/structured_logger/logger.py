@@ -159,10 +159,6 @@ class LoggerConfig:
         default_factory=lambda: [
             "httpx",
             "httpcore",
-            "sqlalchemy",
-            "sqlalchemy.engine",
-            "sqlalchemy.pool",
-            "sqlalchemy.orm",
             "starlette",
             "fastapi",
             "asyncio",
@@ -171,6 +167,35 @@ class LoggerConfig:
             "requests",
         ]
     )
+
+    # SQLAlchemy logger override (disabled by default to reduce noise)
+    enable_sqlalchemy_logging: bool = False
+    sqlalchemy_loggers: List[str] = field(
+        default_factory=lambda: [
+            "sqlalchemy",
+            "sqlalchemy.engine",
+            "sqlalchemy.pool",
+            "sqlalchemy.orm",
+        ]
+    )
+    sqlalchemy_log_level: str = "WARNING"  # Higher level to reduce noise
+
+    # LangChain logger override (disabled by default to reduce noise)
+    enable_langchain_logging: bool = False
+    langchain_loggers: List[str] = field(
+        default_factory=lambda: [
+            "langchain",
+            "langchain.chains",
+            "langchain.agents",
+            "langchain.tools",
+            "langchain.callbacks",
+            "langchain.retrievers",
+            "langchain.embeddings",
+            "langchain.llms",
+            "langchain.chat_models",
+        ]
+    )
+    langchain_log_level: str = "WARNING"  # Higher level to reduce noise
 
     # Stream configuration
     # If True, uses stdout for all logs (Railway-compatible, default)
@@ -507,6 +532,156 @@ def _override_library_loggers(
         library_logger.propagate = False
 
 
+def _override_sqlalchemy_loggers(
+    config: LoggerConfig,
+    formatter: logging.Formatter,
+    force_json: bool = False,
+    force_dev: bool = False,
+) -> None:
+    """Override SQLAlchemy loggers to use structured formatting."""
+    if not config.enable_sqlalchemy_logging:
+        # If SQLAlchemy logging is disabled, silence the loggers completely
+        for logger_name in config.sqlalchemy_loggers:
+            sqlalchemy_logger = logging.getLogger(logger_name)
+            sqlalchemy_logger.setLevel(logging.CRITICAL + 1)  # Effectively silence
+            sqlalchemy_logger.propagate = False
+        return
+
+    # Determine if we should use JSON formatting
+    use_json = force_json or (not force_dev and _is_production_environment(config))
+
+    # Create appropriate formatter for SQLAlchemy loggers
+    if use_json:
+        sqlalchemy_formatter = StructuredLogFormatter(config)
+    else:
+        sqlalchemy_formatter = logging.Formatter(config.dev_format)
+
+    # Override each SQLAlchemy logger
+    for logger_name in config.sqlalchemy_loggers:
+        sqlalchemy_logger = logging.getLogger(logger_name)
+
+        # Clear existing handlers
+        for handler in sqlalchemy_logger.handlers[:]:
+            sqlalchemy_logger.removeHandler(handler)
+
+        # Set log level from config (default WARNING to reduce noise)
+        sqlalchemy_logger.setLevel(
+            getattr(logging, config.sqlalchemy_log_level, logging.WARNING)
+        )
+
+        # Setup advanced features if available and enabled
+        if ADVANCED_FEATURES_AVAILABLE:
+            advanced_formatter = _setup_advanced_formatter(sqlalchemy_formatter, config)
+            handler = _setup_advanced_handler(config, advanced_formatter)
+        else:
+            # Choose handler based on configuration
+            if config.use_stdout_for_all:
+                # Use stdout for all logs (Railway-compatible)
+                handler = logging.StreamHandler(sys.stdout)
+            else:
+                # Use level-based routing (Unix convention)
+                handler = LevelBasedStreamHandler()
+            handler.setFormatter(sqlalchemy_formatter)
+
+        sqlalchemy_logger.addHandler(handler)
+
+        # Add Sentry handler if enabled
+        if SENTRY_INTEGRATION_AVAILABLE and config.enable_sentry:
+            sentry_config = config.sentry_config or SentryConfig()
+            sentry_handler = SentryLogHandler(sentry_config)
+
+            # Add correlation ID filter to Sentry handler if enabled
+            if ADVANCED_FEATURES_AVAILABLE and config.enable_correlation_ids:
+
+                def add_correlation_id(record):
+                    correlation_id = CorrelationIDManager.get_correlation_id()
+                    if correlation_id:
+                        record.correlation_id = correlation_id
+                    return True
+
+                sentry_handler.addFilter(add_correlation_id)
+
+            sqlalchemy_logger.addHandler(sentry_handler)
+
+        # Prevent duplicate logs from propagating to root logger
+        sqlalchemy_logger.propagate = False
+
+
+def _override_langchain_loggers(
+    config: LoggerConfig,
+    formatter: logging.Formatter,
+    force_json: bool = False,
+    force_dev: bool = False,
+) -> None:
+    """Override LangChain loggers to use structured formatting."""
+    if not config.enable_langchain_logging:
+        # If LangChain logging is disabled, silence the loggers completely
+        for logger_name in config.langchain_loggers:
+            langchain_logger = logging.getLogger(logger_name)
+            langchain_logger.setLevel(logging.CRITICAL + 1)  # Effectively silence
+            langchain_logger.propagate = False
+        return
+
+    # Determine if we should use JSON formatting
+    use_json = force_json or (not force_dev and _is_production_environment(config))
+
+    # Create appropriate formatter for LangChain loggers
+    if use_json:
+        langchain_formatter = StructuredLogFormatter(config)
+    else:
+        langchain_formatter = logging.Formatter(config.dev_format)
+
+    # Override each LangChain logger
+    for logger_name in config.langchain_loggers:
+        langchain_logger = logging.getLogger(logger_name)
+
+        # Clear existing handlers
+        for handler in langchain_logger.handlers[:]:
+            langchain_logger.removeHandler(handler)
+
+        # Set log level from config (default WARNING to reduce noise)
+        langchain_logger.setLevel(
+            getattr(logging, config.langchain_log_level, logging.WARNING)
+        )
+
+        # Setup advanced features if available and enabled
+        if ADVANCED_FEATURES_AVAILABLE:
+            advanced_formatter = _setup_advanced_formatter(langchain_formatter, config)
+            handler = _setup_advanced_handler(config, advanced_formatter)
+        else:
+            # Choose handler based on configuration
+            if config.use_stdout_for_all:
+                # Use stdout for all logs (Railway-compatible)
+                handler = logging.StreamHandler(sys.stdout)
+            else:
+                # Use level-based routing (Unix convention)
+                handler = LevelBasedStreamHandler()
+            handler.setFormatter(langchain_formatter)
+
+        langchain_logger.addHandler(handler)
+
+        # Add Sentry handler if enabled
+        if SENTRY_INTEGRATION_AVAILABLE and config.enable_sentry:
+            sentry_config = config.sentry_config or SentryConfig()
+            sentry_handler = SentryLogHandler(sentry_config)
+
+            # Add correlation ID filter to Sentry handler if enabled
+            if ADVANCED_FEATURES_AVAILABLE and config.enable_correlation_ids:
+
+                def add_correlation_id(record):
+                    correlation_id = CorrelationIDManager.get_correlation_id()
+                    if correlation_id:
+                        record.correlation_id = correlation_id
+                    return True
+
+                sentry_handler.addFilter(add_correlation_id)
+
+            langchain_logger.addHandler(sentry_handler)
+
+        # Prevent duplicate logs from propagating to root logger
+        langchain_logger.propagate = False
+
+
 def get_logger(
     name: Optional[str] = None,
     config: Optional[LoggerConfig] = None,
@@ -592,6 +767,12 @@ def get_logger(
         # Override library loggers if enabled
         _override_library_loggers(config, formatter, force_json, force_dev)
 
+        # Override SQLAlchemy loggers (or silence them if disabled)
+        _override_sqlalchemy_loggers(config, formatter, force_json, force_dev)
+
+        # Override LangChain loggers (or silence them if disabled)
+        _override_langchain_loggers(config, formatter, force_json, force_dev)
+
     # Return async logger if enabled
     if ADVANCED_FEATURES_AVAILABLE and config and config.enable_async:
         return AsyncLogger(logger)
@@ -656,6 +837,12 @@ def setup_root_logger(
 
     # Override library loggers if enabled
     _override_library_loggers(config, formatter, force_json, force_dev)
+
+    # Override SQLAlchemy loggers (or silence them if disabled)
+    _override_sqlalchemy_loggers(config, formatter, force_json, force_dev)
+
+    # Override LangChain loggers (or silence them if disabled)
+    _override_langchain_loggers(config, formatter, force_json, force_dev)
 
 
 # Backward compatibility aliases
@@ -748,8 +935,11 @@ def setup_library_logging(
     Setup third-party library logging with structured formatting.
 
     This is a convenience function that specifically configures common third-party
-    library loggers (httpx, sqlalchemy, starlette, etc.) to use structured formatting.
+    library loggers (httpx, starlette, etc.) to use structured formatting.
     It's useful when you want to apply structured logging to all library logs.
+
+    Note: SQLAlchemy logging is controlled separately via enable_sqlalchemy_logging
+    and is disabled by default to reduce noise.
 
     Args:
         config: Logger configuration, uses default with library override enabled if not provided
@@ -770,6 +960,8 @@ def setup_library_logging(
         formatter = logging.Formatter(config.dev_format)
 
     _override_library_loggers(config, formatter, force_json, force_dev)
+    _override_sqlalchemy_loggers(config, formatter, force_json, force_dev)
+    _override_langchain_loggers(config, formatter, force_json, force_dev)
 
 
 def _setup_advanced_formatter(base_formatter, config: LoggerConfig):
