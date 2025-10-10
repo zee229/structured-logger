@@ -185,6 +185,7 @@ class LoggerConfig:
     langchain_loggers: List[str] = field(
         default_factory=lambda: [
             "langchain",
+            "langchain_core",  # Core LangChain functionality
             "langchain.chains",
             "langchain.agents",
             "langchain.tools",
@@ -193,6 +194,7 @@ class LoggerConfig:
             "langchain.embeddings",
             "langchain.llms",
             "langchain.chat_models",
+            "langsmith",  # LangSmith tracing logs
         ]
     )
     langchain_log_level: str = "WARNING"  # Higher level to reduce noise

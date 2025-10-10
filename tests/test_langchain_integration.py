@@ -21,6 +21,7 @@ class TestLangChainLoggerIntegration:
         # Clear any existing LangChain loggers
         langchain_loggers = [
             "langchain",
+            "langchain_core",
             "langchain.chains",
             "langchain.agents",
             "langchain.tools",
@@ -29,6 +30,7 @@ class TestLangChainLoggerIntegration:
             "langchain.embeddings",
             "langchain.llms",
             "langchain.chat_models",
+            "langsmith",
         ]
         for logger_name in langchain_loggers:
             logger = logging.getLogger(logger_name)
@@ -50,9 +52,11 @@ class TestLangChainLoggerIntegration:
         """Test LangChain logger configuration."""
         config = LoggerConfig()
         assert "langchain" in config.langchain_loggers
+        assert "langchain_core" in config.langchain_loggers  # Core module
         assert "langchain.chains" in config.langchain_loggers
         assert "langchain.agents" in config.langchain_loggers
         assert "langchain.tools" in config.langchain_loggers
+        assert "langsmith" in config.langchain_loggers  # LangSmith tracing
 
     def test_langchain_log_level_default(self):
         """Test that LangChain log level defaults to WARNING."""
