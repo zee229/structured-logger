@@ -396,9 +396,9 @@ class TestLibraryLoggerIntegration:
         # Check that all library loggers are silenced (CRITICAL + 1)
         for logger_name in config.library_loggers:
             logger = logging.getLogger(logger_name)
-            assert logger.level == logging.CRITICAL + 1, (
-                f"{logger_name} should be silenced"
-            )
+            assert (
+                logger.level == logging.CRITICAL + 1
+            ), f"{logger_name} should be silenced"
 
     def test_library_log_level_defaults_to_warning(self):
         """Test that library log level defaults to WARNING."""

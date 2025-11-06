@@ -49,8 +49,8 @@ class LoggerConfig:
     production_env_vars: List[str] = field(
         default_factory=lambda: [
             "RAILWAY_ENVIRONMENT_NAME",  # Railway environment name
-            "RAILWAY_SERVICE_NAME",      # Railway service name (always set)
-            "RAILWAY_PROJECT_ID",        # Railway project ID (always set)
+            "RAILWAY_SERVICE_NAME",  # Railway service name (always set)
+            "RAILWAY_PROJECT_ID",  # Railway project ID (always set)
         ]
     )
     production_env_values: List[str] = field(

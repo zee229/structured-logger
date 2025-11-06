@@ -188,6 +188,7 @@ class TestLangChainLoggerIntegration:
 
         # Simulate Railway environment with RAILWAY_SERVICE_NAME
         import os
+
         original_service = os.environ.get("RAILWAY_SERVICE_NAME")
         try:
             os.environ["RAILWAY_SERVICE_NAME"] = "test-service"
