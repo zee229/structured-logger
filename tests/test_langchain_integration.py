@@ -38,15 +38,15 @@ class TestLangChainLoggerIntegration:
             logger.setLevel(logging.NOTSET)
             logger.propagate = True
 
-    def test_langchain_logging_disabled_by_default(self):
-        """Test that LangChain logging is disabled by default."""
+    def test_langchain_logging_enabled_by_default(self):
+        """Test that LangChain logging is enabled by default."""
         config = LoggerConfig()
-        assert config.enable_langchain_logging is False
-
-    def test_langchain_logging_can_be_enabled(self):
-        """Test that LangChain logging can be enabled."""
-        config = LoggerConfig(enable_langchain_logging=True)
         assert config.enable_langchain_logging is True
+
+    def test_langchain_logging_can_be_disabled(self):
+        """Test that LangChain logging can be disabled."""
+        config = LoggerConfig(enable_langchain_logging=False)
+        assert config.enable_langchain_logging is False
 
     def test_langchain_loggers_configuration(self):
         """Test LangChain logger configuration."""

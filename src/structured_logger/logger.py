@@ -166,9 +166,12 @@ class LoggerConfig:
             "requests",
         ]
     )
+    enable_library_logging: bool = True  # Set to False to suppress library logs
+    library_log_level: str = "WARNING"  # Higher level to reduce noise
+    library_log_level_env_var: str = "LIBRARY_LOG_LEVEL"  # Env var for runtime config
 
-    # SQLAlchemy logger override (disabled by default to reduce noise)
-    enable_sqlalchemy_logging: bool = False
+    # SQLAlchemy logger override (enabled by default, set to False to suppress)
+    enable_sqlalchemy_logging: bool = True
     sqlalchemy_loggers: List[str] = field(
         default_factory=lambda: [
             "sqlalchemy",
@@ -179,8 +182,8 @@ class LoggerConfig:
     )
     sqlalchemy_log_level: str = "WARNING"  # Higher level to reduce noise
 
-    # LangChain logger override (disabled by default to reduce noise)
-    enable_langchain_logging: bool = False
+    # LangChain logger override (enabled by default, set to False to suppress)
+    enable_langchain_logging: bool = True
     langchain_loggers: List[str] = field(
         default_factory=lambda: [
             "langchain",
@@ -487,6 +490,14 @@ def _override_library_loggers(
     if not config.override_library_loggers:
         return
 
+    if not config.enable_library_logging:
+        # If library logging is disabled, silence the loggers completely
+        for logger_name in config.library_loggers:
+            library_logger = logging.getLogger(logger_name)
+            library_logger.setLevel(logging.CRITICAL + 1)  # Effectively silence
+            library_logger.propagate = False
+        return
+
     # Determine if we should use JSON formatting
     use_json = force_json or (not force_dev and _is_production_environment(config))
 
@@ -504,11 +515,12 @@ def _override_library_loggers(
         for handler in library_logger.handlers[:]:
             library_logger.removeHandler(handler)
 
-        # Set log level from environment or config default
+        # Set log level from environment variable or config
+        # (allows independent control from app log level)
         log_level = os.getenv(
-            config.log_level_env_var, config.default_log_level
+            config.library_log_level_env_var, config.library_log_level
         ).upper()
-        library_logger.setLevel(getattr(logging, log_level, logging.INFO))
+        library_logger.setLevel(getattr(logging, log_level, logging.WARNING))
 
         # Setup advanced features if available and enabled
         if ADVANCED_FEATURES_AVAILABLE:
@@ -959,8 +971,9 @@ def setup_library_logging(
     library loggers (httpx, starlette, etc.) to use structured formatting.
     It's useful when you want to apply structured logging to all library logs.
 
-    Note: SQLAlchemy logging is controlled separately via enable_sqlalchemy_logging
-    and is disabled by default to reduce noise.
+    Note: SQLAlchemy and LangChain logging are controlled separately via
+    enable_sqlalchemy_logging and enable_langchain_logging (enabled by default).
+    Set to False to suppress if needed.
 
     Args:
         config: Logger configuration, uses default with library override enabled if not provided

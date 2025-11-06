@@ -74,7 +74,10 @@ class TestLibraryLoggerIntegration:
 
     def test_override_library_loggers_with_structured_formatting(self):
         """Test that library loggers use structured formatting when overridden."""
-        config = LoggerConfig(override_library_loggers=True)
+        config = LoggerConfig(
+            override_library_loggers=True,
+            library_log_level="INFO",  # Set to INFO to allow INFO logs in test
+        )
         formatter = StructuredLogFormatter(config)
 
         # Capture log output
@@ -194,7 +197,10 @@ class TestLibraryLoggerIntegration:
 
     def test_multiple_library_loggers_formatted_consistently(self):
         """Test that multiple library loggers are formatted consistently."""
-        config = LoggerConfig(override_library_loggers=True)
+        config = LoggerConfig(
+            override_library_loggers=True,
+            library_log_level="INFO",  # Set to INFO to allow INFO logs in test
+        )
         formatter = StructuredLogFormatter(config)
 
         with patch(
@@ -232,6 +238,7 @@ class TestLibraryLoggerIntegration:
         config = LoggerConfig(
             override_library_loggers=True,
             custom_fields=["request_id", "user_id"],
+            library_log_level="INFO",  # Set to INFO to allow INFO logs in test
         )
         formatter = StructuredLogFormatter(config)
 
@@ -310,3 +317,126 @@ class TestLibraryLoggerIntegration:
         for logger_name in config.library_loggers:
             logger = logging.getLogger(logger_name)
             assert logger.propagate is False, f"{logger_name} should not propagate"
+
+    def test_library_log_level_independent_from_app_level(self):
+        """Test that library log level is independent from app log level."""
+        import os
+
+        # Set app log level to DEBUG
+        os.environ["LOG_LEVEL"] = "DEBUG"
+        # Set library log level to WARNING
+        os.environ["LIBRARY_LOG_LEVEL"] = "WARNING"
+
+        try:
+            config = LoggerConfig(
+                override_library_loggers=True,
+                default_log_level="DEBUG",
+                library_log_level="WARNING",
+            )
+            formatter = StructuredLogFormatter(config)
+
+            with patch(
+                "structured_logger.logger._is_production_environment", return_value=True
+            ):
+                _override_library_loggers(config, formatter, force_json=True)
+
+            # Check that httpx logger has WARNING level
+            httpx_logger = logging.getLogger("httpx")
+            assert httpx_logger.level == logging.WARNING
+
+            # Root logger would be at DEBUG (if configured separately)
+            # This test verifies libraries don't inherit the DEBUG level
+        finally:
+            # Clean up environment variables
+            if "LOG_LEVEL" in os.environ:
+                del os.environ["LOG_LEVEL"]
+            if "LIBRARY_LOG_LEVEL" in os.environ:
+                del os.environ["LIBRARY_LOG_LEVEL"]
+
+    def test_library_log_level_env_var_override(self):
+        """Test that LIBRARY_LOG_LEVEL env var overrides config."""
+        import os
+
+        # Set environment variable to ERROR
+        os.environ["LIBRARY_LOG_LEVEL"] = "ERROR"
+
+        try:
+            config = LoggerConfig(
+                override_library_loggers=True,
+                library_log_level="WARNING",  # Config says WARNING
+            )
+            formatter = StructuredLogFormatter(config)
+
+            with patch(
+                "structured_logger.logger._is_production_environment", return_value=True
+            ):
+                _override_library_loggers(config, formatter, force_json=True)
+
+            # Env var should override config
+            httpx_logger = logging.getLogger("httpx")
+            assert httpx_logger.level == logging.ERROR
+        finally:
+            # Clean up environment variable
+            if "LIBRARY_LOG_LEVEL" in os.environ:
+                del os.environ["LIBRARY_LOG_LEVEL"]
+
+    def test_disable_library_logging_completely(self):
+        """Test that enable_library_logging=False silences all library logs."""
+        config = LoggerConfig(
+            override_library_loggers=True,
+            enable_library_logging=False,  # Silence libraries
+        )
+        formatter = StructuredLogFormatter(config)
+
+        with patch(
+            "structured_logger.logger._is_production_environment", return_value=True
+        ):
+            _override_library_loggers(config, formatter, force_json=True)
+
+        # Check that all library loggers are silenced (CRITICAL + 1)
+        for logger_name in config.library_loggers:
+            logger = logging.getLogger(logger_name)
+            assert logger.level == logging.CRITICAL + 1, (
+                f"{logger_name} should be silenced"
+            )
+
+    def test_library_log_level_defaults_to_warning(self):
+        """Test that library log level defaults to WARNING."""
+        config = LoggerConfig()
+        assert config.library_log_level == "WARNING"
+        assert config.enable_library_logging is True
+
+    def test_library_log_level_custom_value(self):
+        """Test setting custom library log level."""
+        config = LoggerConfig(
+            override_library_loggers=True,
+            library_log_level="ERROR",
+        )
+        formatter = StructuredLogFormatter(config)
+
+        with patch(
+            "structured_logger.logger._is_production_environment", return_value=True
+        ):
+            _override_library_loggers(config, formatter, force_json=True)
+
+        # Check that httpx logger has ERROR level
+        httpx_logger = logging.getLogger("httpx")
+        assert httpx_logger.level == logging.ERROR
+
+    def test_library_logging_disabled_with_override_enabled(self):
+        """Test that enable_library_logging works even with override_library_loggers=True."""
+        config = LoggerConfig(
+            override_library_loggers=True,
+            enable_library_logging=False,
+        )
+        formatter = StructuredLogFormatter(config)
+
+        with patch(
+            "structured_logger.logger._is_production_environment", return_value=True
+        ):
+            _override_library_loggers(config, formatter, force_json=True)
+
+        # All library loggers should be silenced
+        httpx_logger = logging.getLogger("httpx")
+        assert httpx_logger.level == logging.CRITICAL + 1
+        assert httpx_logger.propagate is False

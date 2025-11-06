@@ -1929,7 +1929,7 @@ wheels = [
 
 [[package]]
 name = "structured-logger-railway"
-version = "1.5.2"
+version = "1.6.0"
 source = { editable = "." }
 dependencies = [
     { name = "sentry-sdk", extra = ["fastapi"] },

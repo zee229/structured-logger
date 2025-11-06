@@ -34,15 +34,15 @@ class TestSQLAlchemyLoggerIntegration:
             logger.setLevel(logging.NOTSET)
             logger.propagate = True
 
-    def test_sqlalchemy_logging_disabled_by_default(self):
-        """Test that SQLAlchemy logging is disabled by default."""
+    def test_sqlalchemy_logging_enabled_by_default(self):
+        """Test that SQLAlchemy logging is enabled by default."""
         config = LoggerConfig()
-        assert config.enable_sqlalchemy_logging is False
-
-    def test_sqlalchemy_logging_can_be_enabled(self):
-        """Test that SQLAlchemy logging can be enabled."""
-        config = LoggerConfig(enable_sqlalchemy_logging=True)
         assert config.enable_sqlalchemy_logging is True
+
+    def test_sqlalchemy_logging_can_be_disabled(self):
+        """Test that SQLAlchemy logging can be disabled."""
+        config = LoggerConfig(enable_sqlalchemy_logging=False)
+        assert config.enable_sqlalchemy_logging is False
 
     def test_sqlalchemy_loggers_configuration(self):
         """Test SQLAlchemy logger configuration."""

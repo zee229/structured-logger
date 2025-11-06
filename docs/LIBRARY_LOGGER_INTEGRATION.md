@@ -6,12 +6,13 @@ The structured-logger package now automatically formats logs from third-party li
 
 ## Supported Libraries
 
-The following libraries are automatically configured with structured logging:
+The following libraries are automatically configured with structured logging at WARNING level by default:
 
 - **HTTP Clients**: `httpx`, `httpcore`, `urllib3`, `requests`, `aiohttp`
-- **Database**: `sqlalchemy` (including `sqlalchemy.engine`, `sqlalchemy.pool`, `sqlalchemy.orm`)
 - **Web Frameworks**: `starlette`, `fastapi`
 - **Async Runtime**: `asyncio`
+
+**Note**: SQLAlchemy and LangChain have separate control mechanisms (see their respective sections in CLAUDE.md).
 
 ## Quick Start
 
@@ -49,6 +50,9 @@ setup_root_logger(config=config)
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `override_library_loggers` | `bool` | `True` | Enable structured formatting for library loggers |
+| `enable_library_logging` | `bool` | `True` | Enable/disable library logging completely (False = silence) |
+| `library_log_level` | `str` | `"WARNING"` | Log level for libraries (independent from app level) |
+| `library_log_level_env_var` | `str` | `"LIBRARY_LOG_LEVEL"` | Environment variable name for runtime config |
 | `library_loggers` | `List[str]` | See below | List of library logger names to override |
 
 ### Default Library Loggers
@@ -57,10 +61,6 @@ setup_root_logger(config=config)
 [
     "httpx",
     "httpcore",
-    "sqlalchemy",
-    "sqlalchemy.engine",
-    "sqlalchemy.pool",
-    "sqlalchemy.orm",
     "starlette",
     "fastapi",
     "asyncio",
@@ -70,7 +70,45 @@ setup_root_logger(config=config)
 ]
 ```
 
+**Note**: SQLAlchemy loggers are managed separately via `enable_sqlalchemy_logging` and `sqlalchemy_log_level`.
+
 ## Advanced Usage
+
+### Independent Log Level Control (New in v1.6.0)
+
+Control library log levels independently from your application's log level:
+
+```python
+import os
+from structured_logger import LoggerConfig, get_logger
+
+# Method 1: Environment variables (most flexible)
+os.environ["LOG_LEVEL"] = "DEBUG"  # App at DEBUG
+os.environ["LIBRARY_LOG_LEVEL"] = "WARNING"  # Libraries at WARNING (default)
+
+logger = get_logger(__name__)
+logger.debug("App debug message")  # ✓ Shows
+# httpcore.debug() messages won't show  # ✗ Hidden
+
+# Method 2: Config object
+config = LoggerConfig(
+    default_log_level="DEBUG",  # App log level
+    library_log_level="ERROR",  # Library log level (only errors)
+)
+logger = get_logger(__name__, config=config)
+
+# Method 3: Completely silence libraries
+config = LoggerConfig(
+    enable_library_logging=False,  # Silence all library logs
+)
+logger = get_logger(__name__, config=config)
+```
+
+**Why this is useful**: Libraries like httpx and httpcore generate extremely verbose debug logs. With independent control, you can:
+- Debug your application code with `LOG_LEVEL=DEBUG`
+- Keep library logs at WARNING to avoid spam
+- See library errors when they occur
+- Completely silence libraries in production
 
 ### Custom Library Logger List
 
@@ -81,7 +119,7 @@ from structured_logger import LoggerConfig, setup_root_logger
 
 config = LoggerConfig(
     override_library_loggers=True,
-    library_loggers=["httpx", "sqlalchemy", "mylib"],  # Custom list
+    library_loggers=["httpx", "httpcore", "mylib"],  # Custom list
 )
 setup_root_logger(config=config)
 ```
@@ -179,21 +217,44 @@ Consistent JSON format across all logs!
 2. **Call Order**: Make sure you call `setup_root_logger()` or `get_logger()` before the library creates its loggers
 3. **Logger Names**: Verify the library logger name matches your configuration
 
-### Too Many Logs
+### Too Many Logs / Library Debug Spam
 
-Adjust the log level for library loggers:
+**New in v1.6.0**: Library log level is now independent from your app log level!
 
 ```python
 import os
 
-# Set log level via environment variable
-os.environ["LOG_LEVEL"] = "WARNING"
+# Set library log level via environment variable
+os.environ["LIBRARY_LOG_LEVEL"] = "ERROR"  # Only show errors from libraries
+os.environ["LOG_LEVEL"] = "DEBUG"  # Your app can still use DEBUG
 
 # Or in config
 config = LoggerConfig(
-    override_library_loggers=True,
-    default_log_level="WARNING",  # Only WARNING and above
+    library_log_level="ERROR",  # Libraries: errors only
+    default_log_level="DEBUG",  # Your app: debug level
 )
+
+# Completely silence library logs
+config = LoggerConfig(
+    enable_library_logging=False,  # No library logs at all
+)
+```
+
+**Common scenario**: You want to debug your app with `LOG_LEVEL=DEBUG` but don't want to see httpcore/httpx debug spam:
+
+```python
+import os
+
+# Your app logs at DEBUG, but libraries stay at WARNING (default)
+os.environ["LOG_LEVEL"] = "DEBUG"  # App log level
+# LIBRARY_LOG_LEVEL defaults to "WARNING" - no need to set it!
+
+from structured_logger import get_logger
+
+logger = get_logger(__name__)
+logger.debug("This will show")  # ✓ Shows (app at DEBUG)
+
+# Meanwhile, httpcore.debug() won't show (library at WARNING)
 ```
 
 ### Disable for Specific Libraries
@@ -220,9 +281,10 @@ uv run pytest -v
 
 ## Version History
 
+- **v1.6.0**: Added independent log level control for libraries (`library_log_level`, `enable_library_logging`, `LIBRARY_LOG_LEVEL` env var)
 - **v1.4.0**: Added third-party library logger integration (enabled by default)
-- **v1.3.0**: Added uvicorn logger integration
 - **v1.3.1**: Added gunicorn logger integration
+- **v1.3.0**: Added uvicorn logger integration
 
 ## See Also
 
